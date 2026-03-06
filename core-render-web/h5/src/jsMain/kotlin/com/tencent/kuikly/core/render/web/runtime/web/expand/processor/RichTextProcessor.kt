@@ -451,16 +451,6 @@ object RichTextProcessor : IRichTextProcessor {
         return span
     }
 
-    private fun createFloatSpan(width: Float, height: Float): HTMLSpanElement {
-        val span = kuiklyDocument.createElement(ElementType.SPAN).unsafeCast<HTMLSpanElement>()
-        val style = span.style
-        style.cssFloat = "right"
-        style.clear = "right"
-        style.width = width.toPxF()
-        style.height = height.toPxF()
-        return span
-    }
-
     /**
      * measure real text size
      */
@@ -486,13 +476,14 @@ object RichTextProcessor : IRichTextProcessor {
     override fun setRichTextValues(richTextValues: JSONArray, view: KRRichTextView) {
         // fix repeat node when change richText styles
         view.ele.clear();
+        view.setHasAppendFloatSpans(false)
         val lineBreakMargin = view.getLineBreakMargin()
         val measureResult = view.getMeasureResult()
         if (lineBreakMargin > 0 && measureResult.height > 0) {
             val singleLineHeight = view.getSingleLineHeight()
-            view.ele.appendChild(createFloatSpan(0f, measureResult.height - singleLineHeight))
-            view.ele.appendChild(createFloatSpan(lineBreakMargin, 1f))
-            view.setHasAppendFloatSpans()
+            view.ele.appendChild(view.createFloatSpan(0f, measureResult.height - singleLineHeight))
+            view.ele.appendChild(view.createFloatSpan(lineBreakMargin, 1f))
+            view.setHasAppendFloatSpans(true)
         }
         for (i in 0 until richTextValues.length()) {
             view.ele.appendChild(createSpan(richTextValues.optJSONObject(i) ?: JSONObject(), view))

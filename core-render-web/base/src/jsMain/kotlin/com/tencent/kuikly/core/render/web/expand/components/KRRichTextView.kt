@@ -23,6 +23,7 @@ import com.tencent.kuikly.core.render.web.utils.DeviceType
 import com.tencent.kuikly.core.render.web.utils.DeviceUtils
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLParagraphElement
+import org.w3c.dom.HTMLSpanElement
 import org.w3c.dom.get
 
 class KRTextProps {
@@ -165,7 +166,6 @@ class KRRichTextView : IKuiklyRenderViewExport, IKuiklyRenderShadowExport {
     private var color = ""
     private var fontSize = DEFAULT_ELEMENT_FONT_SIZE
     private var renderText = ""
-    private var eleInnerText = ""
     private var strokeColor = ""
     private var measureResult = SizeF(0f, 0f)
     private var hasAppendFloatSpans = false
@@ -253,13 +253,13 @@ class KRRichTextView : IKuiklyRenderViewExport, IKuiklyRenderShadowExport {
 
             KRTextProps.PROP_KEY_TEXT_POST_PROCESSOR -> {
                 // If text is processed && emoji not done, do emoji textPostProcessor processing here
-                if (eleInnerText.isNotEmpty() && !textProps.textPostProcessorDone) {
+                if (ele.innerText.isNotEmpty() && !textProps.textPostProcessorDone) {
                     KuiklyRenderAdapterManager.krTextPostProcessorAdapter?.onTextPostProcess(
                         TextPostProcessorInput(textProps.textPostProcessor, text, textProps)
                     )?.text?.let {
                         // Update only if changed
                         if (it != text) {
-                            renderText = it.unsafeCast<String>()
+                            ele.innerText = it.unsafeCast<String>()
                             textProps.textPostProcessorDone = true
                         }
                     }
@@ -286,24 +286,22 @@ class KRRichTextView : IKuiklyRenderViewExport, IKuiklyRenderShadowExport {
     override fun setShadow(shadow: IKuiklyRenderShadowExport) {
         super.setShadow(shadow)
 
-        if(!this.isRichTextValues() && eleInnerText != renderText) {
-            // for compose , plain text, isRichText is true, but richTextSpanList.length is 0
-            // for web, when set innerText, the span will be removed
-            eleInnerText = renderText
-            if (lineBreakMargin > 0) {
-                if (DeviceUtils.detectDeviceType() == DeviceType.MINIPROGRAM) {
-                    ele.innerText = renderText
-                } else {
-                    val singleLineHeight = getSingleLineHeight()
-                    val spanHeight = measureResult.height - singleLineHeight
-                    val floatSpanStr = "<span style=\"float: right; clear: right; width: 0; height: ${spanHeight}px;\"></span>" +
-                            "<span style=\"float: right; clear: right; width: ${lineBreakMargin}px; height: 1px;\"></span>"
-                    ele.innerHTML = floatSpanStr + renderText
-                }
-            } else {
+        if(!this.isRichTextValues()) {
+            if (ele.innerText != renderText) {
+                // for compose , plain text, isRichText is true, but richTextSpanList.length is 0
+                // for web, when set innerText, the span will be removed
                 ele.innerText = renderText
             }
-        } else if (isRichTextValues()) {
+            if (lineBreakMargin > 0 && ele.innerText.isNotEmpty() && ele.childNodes.length == 1) {
+                val singleLineHeight = getSingleLineHeight()
+                val spanHeight = measureResult.height - singleLineHeight
+                val span1 = createFloatSpan(0f, spanHeight)
+                val span2 = createFloatSpan(lineBreakMargin, 1f)
+                val firstChild = ele.childNodes[0]
+                ele.insertBefore(span1, firstChild)
+                ele.insertBefore(span2, firstChild)
+            }
+        } else {
             if (lineBreakMargin > 0 && !getHasAppendFloatSpans()) {
                 KuiklyProcessor.richTextProcessor.setRichTextValues(values!!, this)
             }
@@ -320,9 +318,6 @@ class KRRichTextView : IKuiklyRenderViewExport, IKuiklyRenderShadowExport {
      * @param constraintSize Constraint size
      */
     override fun calculateRenderViewSize(constraintSize: SizeF): SizeF {
-        if (ele.innerText == "") {
-            ele.innerText = renderText
-        }
         measureResult = KuiklyProcessor.richTextProcessor.measureTextSize(constraintSize, this, this.renderText)
         return measureResult
     }
@@ -370,12 +365,22 @@ class KRRichTextView : IKuiklyRenderViewExport, IKuiklyRenderShadowExport {
         return h
     }
 
-    fun setHasAppendFloatSpans() {
-        hasAppendFloatSpans = true
+    fun setHasAppendFloatSpans(flag: Boolean) {
+        hasAppendFloatSpans = flag
     }
 
     fun getHasAppendFloatSpans(): Boolean {
         return hasAppendFloatSpans
+    }
+
+    fun createFloatSpan(width: Float, height: Float): HTMLSpanElement {
+        val span = kuiklyDocument.createElement(ElementType.SPAN).unsafeCast<HTMLSpanElement>()
+        val style = span.style
+        style.cssFloat = "right"
+        style.clear = "right"
+        style.width = width.toPxF()
+        style.height = height.toPxF()
+        return span
     }
 
     /**
