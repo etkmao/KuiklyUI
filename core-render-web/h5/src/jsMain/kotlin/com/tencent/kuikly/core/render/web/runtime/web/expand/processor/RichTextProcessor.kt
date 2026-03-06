@@ -6,6 +6,7 @@ import com.tencent.kuikly.core.render.web.processor.FontSizeToLineHeightMap
 import com.tencent.kuikly.core.render.web.processor.IRichTextProcessor
 import com.tencent.kuikly.core.render.web.const.KRCssConst
 import com.tencent.kuikly.core.render.web.ktx.SizeF
+import com.tencent.kuikly.core.render.web.ktx.height
 import com.tencent.kuikly.core.render.web.ktx.indexOfChild
 import com.tencent.kuikly.core.render.web.ktx.kuiklyDocument
 import com.tencent.kuikly.core.render.web.ktx.kuiklyWindow
@@ -433,6 +434,16 @@ object RichTextProcessor : IRichTextProcessor {
         return span
     }
 
+    private fun createFloatSpan(width: Float, height: Float): HTMLSpanElement {
+        val span = kuiklyDocument.createElement(ElementType.SPAN).unsafeCast<HTMLSpanElement>()
+        val style = span.style
+        style.cssFloat = "right"
+        style.clear = "right"
+        style.width = width.toPxF()
+        style.height = height.toPxF()
+        return span
+    }
+
     /**
      * measure real text size
      */
@@ -458,6 +469,13 @@ object RichTextProcessor : IRichTextProcessor {
     override fun setRichTextValues(richTextValues: JSONArray, view: KRRichTextView) {
         // fix repeat node when change richText styles
         view.ele.clear();
+        val lineBreakMargin = view.getLineBreakMargin()
+        if (lineBreakMargin > 0) {
+            val measureResult = view.getMeasureResult()
+            val singleLineHeight = view.getSingleLineHeight()
+            view.ele.appendChild(createFloatSpan(0f, measureResult.height - singleLineHeight))
+            view.ele.appendChild(createFloatSpan(lineBreakMargin, 1f))
+        }
         for (i in 0 until richTextValues.length()) {
             view.ele.appendChild(createSpan(richTextValues.optJSONObject(i) ?: JSONObject(), view))
         }

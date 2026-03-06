@@ -9,12 +9,15 @@ import com.tencent.kuikly.core.render.web.export.IKuiklyRenderViewExport
 import com.tencent.kuikly.core.render.web.const.KRCssConst
 import com.tencent.kuikly.core.render.web.ktx.SizeF
 import com.tencent.kuikly.core.render.web.ktx.getCSSBackgroundImage
+import com.tencent.kuikly.core.render.web.ktx.height
 import com.tencent.kuikly.core.render.web.ktx.kuiklyDocument
+import com.tencent.kuikly.core.render.web.ktx.pxToFloat
 import com.tencent.kuikly.core.render.web.ktx.toNumberFloat
 import com.tencent.kuikly.core.render.web.ktx.toPxF
 import com.tencent.kuikly.core.render.web.ktx.toRgbColor
 import com.tencent.kuikly.core.render.web.nvi.serialization.json.JSONArray
 import com.tencent.kuikly.core.render.web.nvi.serialization.json.JSONObject
+import com.tencent.kuikly.core.render.web.processor.FontSizeToLineHeightMap
 import com.tencent.kuikly.core.render.web.runtime.dom.element.ElementType
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLParagraphElement
@@ -160,7 +163,9 @@ class KRRichTextView : IKuiklyRenderViewExport, IKuiklyRenderShadowExport {
     private var color = ""
     private var fontSize = DEFAULT_ELEMENT_FONT_SIZE
     private var renderText = ""
+    private var eleInnerText = ""
     private var strokeColor = ""
+    private var measureResult = SizeF(0f, 0f)
 
     // Initialize p tag
     private val textEle = kuiklyDocument.createElement(ElementType.P).apply {
@@ -226,7 +231,6 @@ class KRRichTextView : IKuiklyRenderViewExport, IKuiklyRenderShadowExport {
                 // Save original text value
                 text = propValue.unsafeCast<String>()
                 renderText = text
-
                 // emoji textPostProcessor
                 if (textProps.textPostProcessor.isNotEmpty()) {
                     KuiklyRenderAdapterManager.krTextPostProcessorAdapter?.onTextPostProcess(
@@ -246,13 +250,13 @@ class KRRichTextView : IKuiklyRenderViewExport, IKuiklyRenderShadowExport {
 
             KRTextProps.PROP_KEY_TEXT_POST_PROCESSOR -> {
                 // If text is processed && emoji not done, do emoji textPostProcessor processing here
-                if (ele.innerText.isNotEmpty() && !textProps.textPostProcessorDone) {
+                if (eleInnerText.isNotEmpty() && !textProps.textPostProcessorDone) {
                     KuiklyRenderAdapterManager.krTextPostProcessorAdapter?.onTextPostProcess(
                         TextPostProcessorInput(textProps.textPostProcessor, text, textProps)
                     )?.text?.let {
                         // Update only if changed
                         if (it != text) {
-                            ele.innerText = it.unsafeCast<String>()
+                            renderText = it.unsafeCast<String>()
                             textProps.textPostProcessorDone = true
                         }
                     }
@@ -278,10 +282,24 @@ class KRRichTextView : IKuiklyRenderViewExport, IKuiklyRenderShadowExport {
 
     override fun setShadow(shadow: IKuiklyRenderShadowExport) {
         super.setShadow(shadow)
-        if(!this.isRichTextValues() && ele.innerText != renderText) {
+
+        if(!this.isRichTextValues() && eleInnerText != renderText) {
             // for compose , plain text, isRichText is true, but richTextSpanList.length is 0
             // for web, when set innerText, the span will be removed
-            ele.innerText = renderText
+            eleInnerText = renderText
+            if (lineBreakMargin > 0) {
+                val singleLineHeight = getSingleLineHeight()
+                val spanHeight = measureResult.height - singleLineHeight
+                val floatSpanStr = "<span style=\"float: right; clear: right; width: 0; height: ${spanHeight}px;\"></span>" +
+                                   "<span style=\"float: right; clear: right; width: ${lineBreakMargin}px; height: 1px;\"></span>"
+                ele.innerHTML = floatSpanStr + renderText
+            } else {
+                ele.innerText = renderText
+            }
+        } else if (isRichTextValues()) {
+            if (lineBreakMargin > 0) {
+                KuiklyProcessor.richTextProcessor.setRichTextValues(values!!, this)
+            }
         }
     }
 
@@ -294,8 +312,13 @@ class KRRichTextView : IKuiklyRenderViewExport, IKuiklyRenderShadowExport {
      *
      * @param constraintSize Constraint size
      */
-    override fun calculateRenderViewSize(constraintSize: SizeF): SizeF =
-        KuiklyProcessor.richTextProcessor.measureTextSize(constraintSize, this, this.renderText)
+    override fun calculateRenderViewSize(constraintSize: SizeF): SizeF {
+        if (ele.innerText == "") {
+            ele.innerText = renderText
+        }
+        measureResult = KuiklyProcessor.richTextProcessor.measureTextSize(constraintSize, this, this.renderText)
+        return measureResult
+    }
 
     override fun call(methodName: String, params: String): Any? {
         return when (methodName) {
@@ -319,6 +342,25 @@ class KRRichTextView : IKuiklyRenderViewExport, IKuiklyRenderShadowExport {
         return text.ifEmpty {
             null
         }
+    }
+
+    fun getLineBreakMargin(): Float {
+        return lineBreakMargin
+    }
+
+    fun getMeasureResult(): SizeF {
+        return measureResult
+    }
+
+    fun getSingleLineHeight(): Float {
+        val h = if (ele.style.lineHeight != "") {
+            ele.style.lineHeight.pxToFloat()
+        } else if (ele.style.fontSize != "") {
+            FontSizeToLineHeightMap.getLineHeight(ele.style.fontSize.pxToFloat())
+        } else {
+            10f
+        }
+        return h
     }
 
     /**
