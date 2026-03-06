@@ -25,6 +25,7 @@ import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLSpanElement
+import org.w3c.dom.Node
 import org.w3c.dom.get
 import kotlin.math.max
 
@@ -158,6 +159,17 @@ object RichTextProcessor : IRichTextProcessor {
             setMultiLineStyle(view.numberOfLines, newEle)
         }
         setMultiLineStyle(view.numberOfLines, ele)
+        var removedFloatSpans: List<Node> = emptyList()
+        if (view.getHasAppendFloatSpans()) {
+            val childNodes = ele.childNodes
+            if (childNodes.length >= 2) {
+                val first: Node = childNodes[0]!!
+                val second: Node = childNodes[1]!!
+                ele.removeChild(first)
+                ele.removeChild(second)
+                removedFloatSpans = listOf(first, second)
+            }
+        }
         // Insert the node into the page to complete rendering, used to get the actual size of the node
         kuiklyDocument.body?.appendChild(newEle)
         // Element width
@@ -190,6 +202,11 @@ object RichTextProcessor : IRichTextProcessor {
 
         // After getting the size, remove the node from the page
         kuiklyDocument.body?.removeChild(newEle)
+        if (view.getHasAppendFloatSpans() && removedFloatSpans.isNotEmpty()) {
+            removedFloatSpans.reversed().forEach { span ->
+                ele.insertBefore(span, ele.firstChild)
+            }
+        }
         Log.trace("calculate size by dom, size: ", w, h)
         // Actual width
         val realWidth = if (w < constraintSize.width) w + 0.5f else constraintSize.width
@@ -470,11 +487,12 @@ object RichTextProcessor : IRichTextProcessor {
         // fix repeat node when change richText styles
         view.ele.clear();
         val lineBreakMargin = view.getLineBreakMargin()
-        if (lineBreakMargin > 0) {
-            val measureResult = view.getMeasureResult()
+        val measureResult = view.getMeasureResult()
+        if (lineBreakMargin > 0 && measureResult.height > 0) {
             val singleLineHeight = view.getSingleLineHeight()
             view.ele.appendChild(createFloatSpan(0f, measureResult.height - singleLineHeight))
             view.ele.appendChild(createFloatSpan(lineBreakMargin, 1f))
+            view.setHasAppendFloatSpans()
         }
         for (i in 0 until richTextValues.length()) {
             view.ele.appendChild(createSpan(richTextValues.optJSONObject(i) ?: JSONObject(), view))

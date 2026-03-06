@@ -19,6 +19,8 @@ import com.tencent.kuikly.core.render.web.nvi.serialization.json.JSONArray
 import com.tencent.kuikly.core.render.web.nvi.serialization.json.JSONObject
 import com.tencent.kuikly.core.render.web.processor.FontSizeToLineHeightMap
 import com.tencent.kuikly.core.render.web.runtime.dom.element.ElementType
+import com.tencent.kuikly.core.render.web.utils.DeviceType
+import com.tencent.kuikly.core.render.web.utils.DeviceUtils
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLParagraphElement
 import org.w3c.dom.get
@@ -166,6 +168,7 @@ class KRRichTextView : IKuiklyRenderViewExport, IKuiklyRenderShadowExport {
     private var eleInnerText = ""
     private var strokeColor = ""
     private var measureResult = SizeF(0f, 0f)
+    private var hasAppendFloatSpans = false
 
     // Initialize p tag
     private val textEle = kuiklyDocument.createElement(ElementType.P).apply {
@@ -288,16 +291,20 @@ class KRRichTextView : IKuiklyRenderViewExport, IKuiklyRenderShadowExport {
             // for web, when set innerText, the span will be removed
             eleInnerText = renderText
             if (lineBreakMargin > 0) {
-                val singleLineHeight = getSingleLineHeight()
-                val spanHeight = measureResult.height - singleLineHeight
-                val floatSpanStr = "<span style=\"float: right; clear: right; width: 0; height: ${spanHeight}px;\"></span>" +
-                                   "<span style=\"float: right; clear: right; width: ${lineBreakMargin}px; height: 1px;\"></span>"
-                ele.innerHTML = floatSpanStr + renderText
+                if (DeviceUtils.detectDeviceType() == DeviceType.MINIPROGRAM) {
+                    ele.innerText = renderText
+                } else {
+                    val singleLineHeight = getSingleLineHeight()
+                    val spanHeight = measureResult.height - singleLineHeight
+                    val floatSpanStr = "<span style=\"float: right; clear: right; width: 0; height: ${spanHeight}px;\"></span>" +
+                            "<span style=\"float: right; clear: right; width: ${lineBreakMargin}px; height: 1px;\"></span>"
+                    ele.innerHTML = floatSpanStr + renderText
+                }
             } else {
                 ele.innerText = renderText
             }
         } else if (isRichTextValues()) {
-            if (lineBreakMargin > 0) {
+            if (lineBreakMargin > 0 && !getHasAppendFloatSpans()) {
                 KuiklyProcessor.richTextProcessor.setRichTextValues(values!!, this)
             }
         }
@@ -361,6 +368,14 @@ class KRRichTextView : IKuiklyRenderViewExport, IKuiklyRenderShadowExport {
             10f
         }
         return h
+    }
+
+    fun setHasAppendFloatSpans() {
+        hasAppendFloatSpans = true
+    }
+
+    fun getHasAppendFloatSpans(): Boolean {
+        return hasAppendFloatSpans
     }
 
     /**
