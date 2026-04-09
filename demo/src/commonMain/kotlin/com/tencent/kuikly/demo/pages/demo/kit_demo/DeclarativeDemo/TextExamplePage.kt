@@ -498,30 +498,24 @@ internal class TextExampleRichText: ComposeView<ComposeAttr, ComposeEvent>() {
                 padding(all = 16f)
             }
             RichText {
-                Span {
+                attr {
                     fontSize(16f)
-                    text("这是")
+                    fontFamily("Kanit Medium")
+                }
+                Span {
+                    text("9")
                     click {
                         KLog.i("TextExamplePage", "First text span clicked, content: '这是'")
                     }
                 }
                 Span {
-                    fontSize(18f)
-                    text("一段")
+                    text(".9")
                     click {
                         KLog.i("TextExamplePage", "Second text span clicked, content: '一段'")
                     }
                 }
-                Span {
-                    fontSize(22f)
-                    text("一段")
-                    fontWeightMedium()
-                    text("富文本")
-                    click {
-                        KLog.i("TextExamplePage", "Third text span clicked, content: '富文本'")
-                    }
-                }
             }
+            /*
             RichText {
                 attr {
                     lines(3)
@@ -786,7 +780,7 @@ internal class TextExampleRichText: ComposeView<ComposeAttr, ComposeEvent>() {
                     src(LOGO)
                     resizeStretch()
                 }
-            }
+            }*/
         }
     }
 
@@ -916,27 +910,27 @@ internal class TextExamplePage: BasePager() {
             NavBar { attr { title = "Text Attr Example" } }
             List {
                 attr { flex(1f) }
-                ViewExampleSectionHeader { attr { title = "FontSize" } }
-                TextExampleFontSize {  }
-                ViewExampleSectionHeader { attr { title = "FontWeight" } }
-                TextExampleFontWeight {  }
-                ViewExampleSectionHeader { attr { title = "TextColor" } }
-                TextExampleTextColor {  }
-                ViewExampleSectionHeader { attr { title = "TextShadow" } }
-                TextExampleTextShadow {  }
-                // 文字描边
-                ViewExampleSectionHeader { attr { title = "TextStroke" } }
-                TextExampleTextStroke {  }
-                ViewExampleSectionHeader { attr { title = "TextOverFlow" } }
-                TextExampleTextOverflow {  }
-                ViewExampleSectionHeader { attr { title = "TextAlign" } }
-                TextExampleTextAlign {  }
-                ViewExampleSectionHeader { attr { title = "Decoration & FontStyle" } }
-                TextExampleDecoration {  }
-                ViewExampleSectionHeader { attr { title = "RichText" } }
+                // ViewExampleSectionHeader { attr { title = "FontSize" } }
+                // TextExampleFontSize {  }
+                // ViewExampleSectionHeader { attr { title = "FontWeight" } }
+                // TextExampleFontWeight {  }
+                // ViewExampleSectionHeader { attr { title = "TextColor" } }
+                // TextExampleTextColor {  }
+                // ViewExampleSectionHeader { attr { title = "TextShadow" } }
+                // TextExampleTextShadow {  }
+                // // 文字描边
+                // ViewExampleSectionHeader { attr { title = "TextStroke" } }
+                // TextExampleTextStroke {  }
+                // ViewExampleSectionHeader { attr { title = "TextOverFlow" } }
+                // TextExampleTextOverflow {  }
+                // ViewExampleSectionHeader { attr { title = "TextAlign" } }
+                // TextExampleTextAlign {  }
+                // ViewExampleSectionHeader { attr { title = "Decoration & FontStyle" } }
+                // TextExampleDecoration {  }
+                // ViewExampleSectionHeader { attr { title = "RichText" } }
                 TextExampleRichText {  }
-                ViewExampleSectionHeader { attr { title = "LineHeight" } }
-                TextExampleLineHeight {  }
+                // ViewExampleSectionHeader { attr { title = "LineHeight" } }
+                // TextExampleLineHeight {  }
             }
         }
     }
