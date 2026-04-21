@@ -461,3 +461,7 @@
     </block>
   </button>
 </template>
+
+<template name="tmpl_0_77">
+  <input class="{{i.cl}}" value="{{i.value}}" type="{{xs.b(i.type,'text')}}" password="{{xs.b(i.password,false)}}" placeholder="{{i.placeholder}}" placeholder-style="{{i.placeholderStyle}}" placeholder-class="{{xs.b(i.placeholderClass,'input-placeholder')}}" disabled="{{xs.b(i.disabled,false)}}" maxlength="{{xs.b(i.maxLength,140)}}" focus="{{xs.b(i.focus,false)}}" confirm-type="{{xs.b(i.confirmType,'done')}}" confirm-hold="{{xs.b(i.confirmHold,false)}}" adjust-position="{{xs.b(i.adjustPosition,true)}}" hold-keyboard="{{xs.b(i.holdKeyboard,false)}}" cursor-spacing="{{xs.b(i.cursorSpacing,0)}}" cursor="{{xs.b(i.cursor,-1)}}" selection-start="{{xs.b(i.selectionStart,-1)}}" selection-end="{{xs.b(i.selectionEnd,-1)}}" name="{{i.name}}" bindinput="eh" bindfocus="eh" bindblur="eh" bindconfirm="eh" bindkeyboardheightchange="eh" bindnicknamereview="eh" bindtouchstart="eh" bindtouchmove="eh" bindtouchend="eh" bindtouchcancel="eh" bindlongpress="eh" animation="{{i.p0}}" style="{{i.st}}" bindtap="eh" id="{{i.uid||i.sid}}" data-sid="{{i.sid}}" />
+</template>

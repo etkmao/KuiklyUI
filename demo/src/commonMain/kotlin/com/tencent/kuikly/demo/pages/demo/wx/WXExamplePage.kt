@@ -25,6 +25,9 @@ import com.tencent.kuikly.core.views.Text
 import com.tencent.kuikly.core.views.View
 import com.tencent.kuikly.core.views.wx.WXButton
 import com.tencent.kuikly.core.views.wx.WXButtonOpenType
+import com.tencent.kuikly.core.views.wx.WXInput
+import com.tencent.kuikly.core.views.wx.WXInputConfirmType
+import com.tencent.kuikly.core.views.wx.WXInputType
 import com.tencent.kuikly.demo.pages.base.BasePager
 import com.tencent.kuikly.demo.pages.demo.base.NavBar
 import com.tencent.kuikly.demo.pages.demo.kit_demo.DeclarativeDemo.Common.ViewExampleSectionHeader
@@ -34,6 +37,9 @@ internal class WXExamplePage : BasePager() {
 
     private var phoneNumberTip by observable("尚未获取")
     private var userInfoTip by observable("尚未获取")
+    private var inputTextTip by observable("")
+    private var inputNumberTip by observable("")
+    private var inputConfirmTip by observable("尚未提交")
 
     override fun body(): ViewBuilder {
         val ctx = this
@@ -258,6 +264,112 @@ internal class WXExamplePage : BasePager() {
                                 text("意见反馈")
                                 fontSize(14f)
                             }
+                        }
+                    }
+                }
+
+                ViewExampleSectionHeader {
+                    attr { title = "WXInput 基础用法：实时输入 / 回车提交" }
+                }
+                View {
+                    attr {
+                        flexDirectionColumn()
+                        padding(left = 16f, right = 16f, top = 12f, bottom = 12f)
+                    }
+                    WXInput {
+                        attr {
+                            height(40f)
+                            backgroundColor(0xFFF5F5F5)
+                            borderRadius(6f)
+                            padding(left = 12f, right = 12f)
+                            type(WXInputType.TEXT)
+                            placeholder("请输入文本，回车提交")
+                            confirmType(WXInputConfirmType.DONE)
+                            maxLength(50)
+                        }
+                        event {
+                            onInput { detail ->
+                                KLog.i("WXExamplePage", "onInput: $detail")
+                                ctx.inputTextTip = detail.optString("data")
+                            }
+                            onConfirm { detail ->
+                                KLog.i("WXExamplePage", "onConfirm: $detail")
+                                ctx.inputConfirmTip = detail.optString("data")
+                            }
+                            onFocus { KLog.i("WXExamplePage", "input onFocus") }
+                            onBlur { KLog.i("WXExamplePage", "input onBlur") }
+                        }
+                    }
+                    Text {
+                        attr {
+                            marginTop(8f)
+                            fontSize(12f)
+                            color(0xFF666666)
+                            text("当前输入：${ctx.inputTextTip}")
+                        }
+                    }
+                    Text {
+                        attr {
+                            marginTop(4f)
+                            fontSize(12f)
+                            color(0xFF666666)
+                            text("最近一次提交：${ctx.inputConfirmTip}")
+                        }
+                    }
+                }
+
+                ViewExampleSectionHeader {
+                    attr { title = "WXInput 数字键盘 / 密码 / 禁用" }
+                }
+                View {
+                    attr {
+                        flexDirectionColumn()
+                        padding(left = 16f, right = 16f, top = 12f, bottom = 12f)
+                    }
+                    WXInput {
+                        attr {
+                            height(40f)
+                            backgroundColor(0xFFF5F5F5)
+                            borderRadius(6f)
+                            padding(left = 12f, right = 12f)
+                            type(WXInputType.NUMBER)
+                            placeholder("仅可输入数字")
+                        }
+                        event {
+                            onInput { detail ->
+                                ctx.inputNumberTip = detail.optString("data")
+                            }
+                        }
+                    }
+                    Text {
+                        attr {
+                            marginTop(4f)
+                            fontSize(12f)
+                            color(0xFF666666)
+                            text("数字输入：${ctx.inputNumberTip}")
+                        }
+                    }
+                    WXInput {
+                        attr {
+                            marginTop(12f)
+                            height(40f)
+                            backgroundColor(0xFFF5F5F5)
+                            borderRadius(6f)
+                            padding(left = 12f, right = 12f)
+                            type(WXInputType.TEXT)
+                            password(true)
+                            placeholder("密码输入")
+                        }
+                    }
+                    WXInput {
+                        attr {
+                            marginTop(12f)
+                            height(40f)
+                            backgroundColor(0xFFEEEEEE)
+                            borderRadius(6f)
+                            padding(left = 12f, right = 12f)
+                            disabled(true)
+                            value("禁用状态，不可编辑")
                         }
                     }
                 }

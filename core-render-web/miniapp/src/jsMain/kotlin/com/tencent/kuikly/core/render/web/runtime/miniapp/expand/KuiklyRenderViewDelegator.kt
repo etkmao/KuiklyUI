@@ -24,7 +24,9 @@ import com.tencent.kuikly.core.render.web.expand.components.KRView
 import com.tencent.kuikly.core.render.web.expand.components.list.KRListView
 import com.tencent.kuikly.core.render.web.runtime.miniapp.core.Transform
 import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXButtonViewElement
+import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXInputViewElement
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXButtonView
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXInputView
 import com.tencent.kuikly.core.render.web.expand.module.KRCalendarModule
 import com.tencent.kuikly.core.render.web.expand.module.KRCodecModule
 import com.tencent.kuikly.core.render.web.expand.module.KRLogModule
@@ -460,6 +462,15 @@ class KuiklyRenderViewDelegator(private val delegate: KuiklyRenderViewDelegatorD
             // Register KRWXButtonView
             renderViewExport(KRWXButtonView.VIEW_NAME, {
                 KRWXButtonView()
+            })
+            // Register `wx-input` component template alias so that Transform can recognize it
+            Transform.addComponentsAlias(
+                MiniWXInputViewElement.NODE_NAME,
+                MiniWXInputViewElement.componentsAlias
+            )
+            // Register KRWXInputView
+            renderViewExport(KRWXInputView.VIEW_NAME, {
+                KRWXInputView()
             })
         }
     }
