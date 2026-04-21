@@ -63,3 +63,12 @@ demo里面的src/commonMain/assets下的文件，需要复制到dist/assets目�
 
 项目入口在 Main.kt 的 main 方法中，其中 KuiklyRenderViewDelegator 用于注册外部自定义 View 和 Module 及 PropHandler， 
 宿主侧可以在此实现自定义的View，Module并注册到KuiklyRenderViewDelegator中。
+
+## 微信小程序内置组件
+
+在微信小程序平台，很多能力（如 ``<button open-type>`` 开放能力、``<camera>``/``<map>``/``<video>``/``<web-view>``
+ 等宿主组件）只能通过微信小程序**原生组件**实现。Kuikly 已内置了这些组件的封装，同时也支持业务侧自行扩展。
+
+详细说明、完整组件清单、Demo 位置，以及如何自行扩展 / 使用 AI 辅助生成，请参考：
+
+- [微信小程序内置组件接入](miniapp-wx-components.md)
