@@ -32,6 +32,8 @@ import com.tencent.kuikly.core.views.wx.WXPicker
 import com.tencent.kuikly.core.views.wx.WXPickerMode
 import com.tencent.kuikly.core.views.wx.WXTextArea
 import com.tencent.kuikly.core.views.wx.WXTextAreaConfirmType
+import com.tencent.kuikly.core.views.wx.WXVideo
+import com.tencent.kuikly.core.views.wx.WXVideoObjectFit
 import com.tencent.kuikly.demo.pages.base.BasePager
 import com.tencent.kuikly.demo.pages.demo.base.NavBar
 import com.tencent.kuikly.demo.pages.demo.kit_demo.DeclarativeDemo.Common.ViewExampleSectionHeader
@@ -50,6 +52,8 @@ internal class WXExamplePage : BasePager() {
     private var pickerSelectedIndex by observable(0)
     private var pickerDate by observable("2026-04-21")
     private var pickerTime by observable("09:30")
+    private var videoPlayStatus by observable("尚未播放")
+    private var videoCurrentTime by observable("0.00")
 
     override fun body(): ViewBuilder {
         val ctx = this
@@ -543,6 +547,111 @@ internal class WXExamplePage : BasePager() {
                                     text("时间：${ctx.pickerTime}（点我选择）")
                                 }
                             }
+                        }
+                    }
+                }
+
+                ViewExampleSectionHeader {
+                    attr { title = "WXVideo 视频播放器：基础属性与回调" }
+                }
+                View {
+                    attr {
+                        flexDirectionColumn()
+                        padding(left = 16f, right = 16f, top = 12f, bottom = 12f)
+                    }
+                    WXVideo {
+                        attr {
+                            width(343f)
+                            height(200f)
+                            backgroundColor(0xFF000000)
+                            src("http://vjs.zencdn.net/v/oceans.mp4")
+                            poster("https://pic2.zhimg.com/v2-2a0434dd4e4bb7a638b8df699a505ca1_b.jpg")
+                            controls(true)
+                            objectFit(WXVideoObjectFit.CONTAIN)
+                            showFullscreenBtn(true)
+                            showPlayBtn(true)
+                            showCenterPlayBtn(true)
+                            initialTime(0)
+                            title("WX Video Demo")
+                        }
+                        event {
+                            onPlay { detail ->
+                                KLog.i("WXExamplePage", "video onPlay: $detail")
+                                ctx.videoPlayStatus = "正在播放"
+                            }
+                            onPause { detail ->
+                                KLog.i("WXExamplePage", "video onPause: $detail")
+                                ctx.videoPlayStatus = "已暂停"
+                            }
+                            onEnded { detail ->
+                                KLog.i("WXExamplePage", "video onEnded: $detail")
+                                ctx.videoPlayStatus = "播放结束"
+                            }
+                            onTimeUpdate { detail ->
+                                val data = detail.optString("data")
+                                val match = Regex("\"currentTime\":([0-9.]+)")
+                                    .find(data)?.groupValues?.getOrNull(1)
+                                if (!match.isNullOrEmpty()) ctx.videoCurrentTime = match
+                            }
+                            onWaiting { KLog.i("WXExamplePage", "video onWaiting") }
+                            onError { detail ->
+                                KLog.e("WXExamplePage", "video onError: $detail")
+                                ctx.videoPlayStatus = "播放异常"
+                            }
+                            onFullscreenChange { detail ->
+                                KLog.i("WXExamplePage", "video onFullscreenChange: $detail")
+                            }
+                            onLoadedMetadata { detail ->
+                                KLog.i("WXExamplePage", "video onLoadedMetadata: $detail")
+                            }
+                        }
+                    }
+                    Text {
+                        attr {
+                            marginTop(8f)
+                            fontSize(12f)
+                            color(0xFF666666)
+                            text("状态：${ctx.videoPlayStatus}")
+                        }
+                    }
+                    Text {
+                        attr {
+                            marginTop(4f)
+                            fontSize(12f)
+                            color(0xFF666666)
+                            text("当前进度：${ctx.videoCurrentTime} s")
+                        }
+                    }
+                }
+
+                ViewExampleSectionHeader {
+                    attr { title = "WXVideo 高级属性：自动播放 / 循环 / 静音" }
+                }
+                View {
+                    attr {
+                        flexDirectionColumn()
+                        padding(left = 16f, right = 16f, top = 12f, bottom = 20f)
+                    }
+                    WXVideo {
+                        attr {
+                            width(343f)
+                            height(180f)
+                            backgroundColor(0xFF000000)
+                            src("http://vjs.zencdn.net/v/oceans.mp4")
+                            autoplay(true)
+                            loop(true)
+                            muted(true)
+                            controls(false)
+                            showCenterPlayBtn(false)
+                            objectFit(WXVideoObjectFit.COVER)
+                        }
+                    }
+                    Text {
+                        attr {
+                            marginTop(8f)
+                            fontSize(12f)
+                            color(0xFF999999)
+                            text("自动播放 + 静音 + 循环 + cover 适配")
                         }
                     }
                 }

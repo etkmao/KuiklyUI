@@ -27,10 +27,12 @@ import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXButtonVie
 import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXInputViewElement
 import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXPickerViewElement
 import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXTextAreaViewElement
+import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXVideoViewElement
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXButtonView
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXInputView
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXPickerView
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXTextAreaView
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXVideoView
 import com.tencent.kuikly.core.render.web.expand.module.KRCalendarModule
 import com.tencent.kuikly.core.render.web.expand.module.KRCodecModule
 import com.tencent.kuikly.core.render.web.expand.module.KRLogModule
@@ -493,6 +495,15 @@ class KuiklyRenderViewDelegator(private val delegate: KuiklyRenderViewDelegatorD
             // Register KRWXPickerView
             renderViewExport(KRWXPickerView.VIEW_NAME, {
                 KRWXPickerView()
+            })
+            // Register `wx-video` component template alias so that Transform can recognize it
+            Transform.addComponentsAlias(
+                MiniWXVideoViewElement.NODE_NAME,
+                MiniWXVideoViewElement.componentsAlias
+            )
+            // Register KRWXVideoView
+            renderViewExport(KRWXVideoView.VIEW_NAME, {
+                KRWXVideoView()
             })
         }
     }
