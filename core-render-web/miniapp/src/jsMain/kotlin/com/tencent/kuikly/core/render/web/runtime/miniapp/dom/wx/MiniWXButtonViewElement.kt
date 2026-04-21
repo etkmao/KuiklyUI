@@ -161,9 +161,12 @@ class MiniWXButtonViewElement(
 
     companion object {
         /**
-         * WeChat mini-program native tag name, must be `button`.
+         * Internal node name used to distinguish this element from the framework's built-in
+         * `button` (which, on non-mini-program web, maps to DOM `<button>`). The mini-program
+         * output tag is still `button` — that is controlled by the template `tmpl_0_76` in
+         * `base.wxml`, bound via [componentsAlias]'s `_num: '76'`.
          */
-        const val NODE_NAME = "button"
+        const val NODE_NAME = "wx-button"
 
         /**
          * Component alias mapping for mini-program `button`.
