@@ -24,12 +24,16 @@ import com.tencent.kuikly.core.render.web.expand.components.KRView
 import com.tencent.kuikly.core.render.web.expand.components.list.KRListView
 import com.tencent.kuikly.core.render.web.runtime.miniapp.core.Transform
 import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXButtonViewElement
+import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXCameraViewElement
 import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXInputViewElement
+import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXMapViewElement
 import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXPickerViewElement
 import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXTextAreaViewElement
 import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXVideoViewElement
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXButtonView
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXCameraView
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXInputView
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXMapView
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXPickerView
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXTextAreaView
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXVideoView
@@ -504,6 +508,24 @@ class KuiklyRenderViewDelegator(private val delegate: KuiklyRenderViewDelegatorD
             // Register KRWXVideoView
             renderViewExport(KRWXVideoView.VIEW_NAME, {
                 KRWXVideoView()
+            })
+            // Register `wx-camera` component template alias so that Transform can recognize it
+            Transform.addComponentsAlias(
+                MiniWXCameraViewElement.NODE_NAME,
+                MiniWXCameraViewElement.componentsAlias
+            )
+            // Register KRWXCameraView
+            renderViewExport(KRWXCameraView.VIEW_NAME, {
+                KRWXCameraView()
+            })
+            // Register `wx-map` component template alias so that Transform can recognize it
+            Transform.addComponentsAlias(
+                MiniWXMapViewElement.NODE_NAME,
+                MiniWXMapViewElement.componentsAlias
+            )
+            // Register KRWXMapView
+            renderViewExport(KRWXMapView.VIEW_NAME, {
+                KRWXMapView()
             })
         }
     }

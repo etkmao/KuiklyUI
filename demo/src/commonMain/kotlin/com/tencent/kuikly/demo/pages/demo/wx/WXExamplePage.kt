@@ -25,9 +25,14 @@ import com.tencent.kuikly.core.views.Text
 import com.tencent.kuikly.core.views.View
 import com.tencent.kuikly.core.views.wx.WXButton
 import com.tencent.kuikly.core.views.wx.WXButtonOpenType
+import com.tencent.kuikly.core.views.wx.WXCamera
+import com.tencent.kuikly.core.views.wx.WXCameraDevicePosition
+import com.tencent.kuikly.core.views.wx.WXCameraFlash
+import com.tencent.kuikly.core.views.wx.WXCameraResolution
 import com.tencent.kuikly.core.views.wx.WXInput
 import com.tencent.kuikly.core.views.wx.WXInputConfirmType
 import com.tencent.kuikly.core.views.wx.WXInputType
+import com.tencent.kuikly.core.views.wx.WXMap
 import com.tencent.kuikly.core.views.wx.WXPicker
 import com.tencent.kuikly.core.views.wx.WXPickerMode
 import com.tencent.kuikly.core.views.wx.WXTextArea
@@ -54,6 +59,14 @@ internal class WXExamplePage : BasePager() {
     private var pickerTime by observable("09:30")
     private var videoPlayStatus by observable("尚未播放")
     private var videoCurrentTime by observable("0.00")
+    private var cameraStatus by observable("未初始化")
+    private var cameraErrorTip by observable("")
+    private var scanCodeTip by observable("尚未扫码")
+    private var cameraDevicePosition by observable(WXCameraDevicePosition.BACK)
+    private var cameraFlashMode by observable(WXCameraFlash.AUTO)
+    private var mapCenterTip by observable("北京天安门")
+    private var mapMarkerTip by observable("尚未点击 marker")
+    private var mapRegionChangeTip by observable("视图无变化")
 
     override fun body(): ViewBuilder {
         val ctx = this
@@ -652,6 +665,267 @@ internal class WXExamplePage : BasePager() {
                             fontSize(12f)
                             color(0xFF999999)
                             text("自动播放 + 静音 + 循环 + cover 适配")
+                        }
+                    }
+                }
+
+                ViewExampleSectionHeader {
+                    attr { title = "WXCamera 相机：基础用法" }
+                }
+                View {
+                    attr {
+                        flexDirectionColumn()
+                        padding(left = 16f, right = 16f, top = 12f, bottom = 12f)
+                    }
+                    WXCamera {
+                        attr {
+                            width(343f)
+                            height(260f)
+                            backgroundColor(0xFF000000)
+                            mode("normal")
+                            resolution(WXCameraResolution.MEDIUM)
+                            devicePosition(ctx.cameraDevicePosition)
+                            flash(ctx.cameraFlashMode)
+                        }
+                        event {
+                            onInitDone { detail ->
+                                KLog.i("WXExamplePage", "camera onInitDone: $detail")
+                                ctx.cameraStatus = "已就绪"
+                            }
+                            onStop { detail ->
+                                KLog.i("WXExamplePage", "camera onStop: $detail")
+                                ctx.cameraStatus = "已停止"
+                            }
+                            onError { detail ->
+                                KLog.e("WXExamplePage", "camera onError: $detail")
+                                ctx.cameraStatus = "出现错误"
+                                ctx.cameraErrorTip = detail.toString()
+                            }
+                        }
+                    }
+                    Text {
+                        attr {
+                            marginTop(8f)
+                            fontSize(12f)
+                            color(0xFF666666)
+                            text("相机状态：${ctx.cameraStatus}")
+                        }
+                    }
+                    Text {
+                        attr {
+                            marginTop(4f)
+                            fontSize(12f)
+                            color(0xFFCC3333)
+                            text(if (ctx.cameraErrorTip.isEmpty()) "" else "错误信息：${ctx.cameraErrorTip}")
+                        }
+                    }
+                    View {
+                        attr {
+                            flexDirectionRow()
+                            justifyContentSpaceAround()
+                            marginTop(12f)
+                        }
+                        WXButton {
+                            attr {
+                                type("default")
+                                size("mini")
+                                titleAttr {
+                                    text(if (ctx.cameraDevicePosition == WXCameraDevicePosition.BACK) "切前置" else "切后置")
+                                    fontSize(14f)
+                                }
+                            }
+                            event {
+                                click {
+                                    ctx.cameraDevicePosition =
+                                        if (ctx.cameraDevicePosition == WXCameraDevicePosition.BACK) {
+                                            WXCameraDevicePosition.FRONT
+                                        } else {
+                                            WXCameraDevicePosition.BACK
+                                        }
+                                }
+                            }
+                        }
+                        WXButton {
+                            attr {
+                                type("default")
+                                size("mini")
+                                titleAttr {
+                                    text("闪光灯：${ctx.cameraFlashMode}")
+                                    fontSize(14f)
+                                }
+                            }
+                            event {
+                                click {
+                                    ctx.cameraFlashMode = when (ctx.cameraFlashMode) {
+                                        WXCameraFlash.AUTO -> WXCameraFlash.ON
+                                        WXCameraFlash.ON -> WXCameraFlash.OFF
+                                        WXCameraFlash.OFF -> WXCameraFlash.TORCH
+                                        else -> WXCameraFlash.AUTO
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                ViewExampleSectionHeader {
+                    attr { title = "WXCamera 扫码模式：scanCode" }
+                }
+                View {
+                    attr {
+                        flexDirectionColumn()
+                        padding(left = 16f, right = 16f, top = 12f, bottom = 12f)
+                    }
+                    WXCamera {
+                        attr {
+                            width(343f)
+                            height(200f)
+                            backgroundColor(0xFF000000)
+                            mode("scanCode")
+                        }
+                        event {
+                            onScanCode { detail ->
+                                KLog.i("WXExamplePage", "camera onScanCode: $detail")
+                                ctx.scanCodeTip = detail.toString()
+                            }
+                        }
+                    }
+                    Text {
+                        attr {
+                            marginTop(8f)
+                            fontSize(12f)
+                            color(0xFF666666)
+                            text("扫码结果：${ctx.scanCodeTip}")
+                        }
+                    }
+                }
+
+                ViewExampleSectionHeader {
+                    attr { title = "WXMap 地图：基础显示 / 控件" }
+                }
+                View {
+                    attr {
+                        flexDirectionColumn()
+                        padding(left = 16f, right = 16f, top = 12f, bottom = 12f)
+                    }
+                    WXMap {
+                        attr {
+                            width(343f)
+                            height(260f)
+                            latitude(39.9042)
+                            longitude(116.4074)
+                            scale(14.0)
+                            showCompass(true)
+                            showScale(true)
+                            showLocation(true)
+                            enableZoom(true)
+                            enableScroll(true)
+                            enableRotate(true)
+                        }
+                        event {
+                            onRegionChange { detail ->
+                                KLog.i("WXExamplePage", "map onRegionChange: $detail")
+                                val data = detail.optString("data")
+                                val type = Regex("\"type\":\"(.*?)\"")
+                                    .find(data)?.groupValues?.getOrNull(1) ?: "-"
+                                ctx.mapRegionChangeTip = "type=$type"
+                            }
+                            onError { detail ->
+                                KLog.e("WXExamplePage", "map onError: $detail")
+                            }
+                        }
+                    }
+                    Text {
+                        attr {
+                            marginTop(8f)
+                            fontSize(12f)
+                            color(0xFF666666)
+                            text("中心：${ctx.mapCenterTip}")
+                        }
+                    }
+                    Text {
+                        attr {
+                            marginTop(4f)
+                            fontSize(12f)
+                            color(0xFF666666)
+                            text("视图事件：${ctx.mapRegionChangeTip}")
+                        }
+                    }
+                }
+
+                ViewExampleSectionHeader {
+                    attr { title = "WXMap 标注 / 折线 / 圆：markers & polyline" }
+                }
+                View {
+                    attr {
+                        flexDirectionColumn()
+                        padding(left = 16f, right = 16f, top = 12f, bottom = 20f)
+                    }
+                    WXMap {
+                        attr {
+                            width(343f)
+                            height(300f)
+                            latitude(39.9042)
+                            longitude(116.4074)
+                            scale(13.0)
+                            markersJson(
+                                """[
+                                {"id":1,"latitude":39.9042,"longitude":116.4074,"title":"天安门","width":30,"height":30,"callout":{"content":"天安门广场","display":"ALWAYS","color":"#333333","fontSize":12,"borderRadius":4,"padding":6,"bgColor":"#FFFFFF"}},
+                                {"id":2,"latitude":39.9164,"longitude":116.3972,"title":"故宫","width":30,"height":30}
+                            ]""".trimIndent()
+                            )
+                            polylineJson(
+                                """[{
+                                "points":[
+                                    {"latitude":39.9042,"longitude":116.4074},
+                                    {"latitude":39.9164,"longitude":116.3972}
+                                ],
+                                "color":"#FF0000DD",
+                                "width":4,
+                                "dottedLine":false
+                            }]""".trimIndent()
+                            )
+                            circlesJson(
+                                """[{
+                                "latitude":39.9042,
+                                "longitude":116.4074,
+                                "color":"#FF000088",
+                                "fillColor":"#FF000033",
+                                "radius":300,
+                                "strokeWidth":2
+                            }]""".trimIndent()
+                            )
+                            includePointsJson(
+                                """[
+                                {"latitude":39.9042,"longitude":116.4074},
+                                {"latitude":39.9164,"longitude":116.3972}
+                            ]""".trimIndent()
+                            )
+                            showLocation(true)
+                            showScale(true)
+                        }
+                        event {
+                            onMarkerTap { detail ->
+                                KLog.i("WXExamplePage", "map onMarkerTap: $detail")
+                                val data = detail.optString("data")
+                                val markerId = Regex("\"markerId\":(\\d+)")
+                                    .find(data)?.groupValues?.getOrNull(1) ?: "-"
+                                ctx.mapMarkerTip = "点击 marker id=$markerId"
+                            }
+                            onTap { detail ->
+                                KLog.i("WXExamplePage", "map onTap: $detail")
+                            }
+                            onCalloutTap { detail ->
+                                KLog.i("WXExamplePage", "map onCalloutTap: $detail")
+                            }
+                        }
+                    }
+                    Text {
+                        attr {
+                            marginTop(8f)
+                            fontSize(12f)
+                            color(0xFF666666)
+                            text("交互：${ctx.mapMarkerTip}")
                         }
                     }
                 }

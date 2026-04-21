@@ -485,3 +485,15 @@
     </block>
   </video>
 </template>
+
+<template name="tmpl_0_81">
+  <camera class="{{i.cl}}" mode="{{xs.b(i.mode,'normal')}}" resolution="{{xs.b(i.resolution,'medium')}}" device-position="{{xs.b(i.devicePosition,'back')}}" flash="{{xs.b(i.flash,'auto')}}" frame-size="{{xs.b(i.frameSize,'medium')}}" bindstop="eh" binderror="eh" bindinitdone="eh" bindscancode="eh" bindtouchstart="eh" bindtouchmove="eh" bindtouchend="eh" bindlongpress="eh" animation="{{i.p0}}" style="{{i.st}}" bindtap="eh" id="{{i.uid||i.sid}}" data-sid="{{i.sid}}"></camera>
+</template>
+
+<template name="tmpl_0_82">
+  <map class="{{i.cl}}" longitude="{{i.longitude}}" latitude="{{i.latitude}}" scale="{{xs.b(i.scale,16)}}" min-scale="{{xs.b(i.minScale,3)}}" max-scale="{{xs.b(i.maxScale,20)}}" markers="{{i.markers}}" polyline="{{i.polyline}}" polygons="{{i.polygons}}" circles="{{i.circles}}" controls="{{i.controls}}" include-points="{{i.includePoints}}" show-compass="{{xs.b(i.showCompass,false)}}" show-scale="{{xs.b(i.showScale,false)}}" enable-3D="{{xs.b(i.enable3D,false)}}" enable-overlooking="{{xs.b(i.enableOverlooking,false)}}" enable-zoom="{{xs.b(i.enableZoom,true)}}" enable-scroll="{{xs.b(i.enableScroll,true)}}" enable-rotate="{{xs.b(i.enableRotate,false)}}" enable-building="{{xs.b(i.enableBuilding,false)}}" show-location="{{xs.b(i.showLocation,false)}}" enable-satellite="{{xs.b(i.enableSatellite,false)}}" enable-traffic="{{xs.b(i.enableTraffic,false)}}" enable-indoor-map="{{xs.b(i.enableIndoorMap,false)}}" layer-style="{{xs.b(i.layerStyle,1)}}" subkey="{{i.subkey}}" rotate="{{xs.b(i.rotate,0)}}" skew="{{xs.b(i.skew,0)}}" setting="{{i.settingId}}" bindtap="eh" bindmarkertap="eh" bindcontroltap="eh" bindcallouttap="eh" bindlabeltap="eh" bindupdated="eh" bindregionchange="eh" bindpoitap="eh" bindanchorpointtap="eh" binderror="eh" bindtouchstart="eh" bindtouchmove="eh" bindtouchend="eh" bindlongpress="eh" animation="{{i.p0}}" style="{{i.st}}" id="{{i.uid||i.sid}}" data-sid="{{i.sid}}">
+    <block wx:for="{{i.cn}}" wx:key="sid">
+      <template is="{{xs.a(c, item.nn, l)}}" data="{{i:item,c:c+1}}" />
+    </block>
+  </map>
+</template>
