@@ -22,6 +22,9 @@ import com.tencent.kuikly.core.render.web.expand.components.KRTextFieldView
 import com.tencent.kuikly.core.render.web.expand.components.KRVideoView
 import com.tencent.kuikly.core.render.web.expand.components.KRView
 import com.tencent.kuikly.core.render.web.expand.components.list.KRListView
+import com.tencent.kuikly.core.render.web.runtime.miniapp.core.Transform
+import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXButtonViewElement
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXButtonView
 import com.tencent.kuikly.core.render.web.expand.module.KRCalendarModule
 import com.tencent.kuikly.core.render.web.expand.module.KRCodecModule
 import com.tencent.kuikly.core.render.web.expand.module.KRLogModule
@@ -437,8 +440,27 @@ class KuiklyRenderViewDelegator(private val delegate: KuiklyRenderViewDelegatorD
             renderViewExport(KRMaskView.VIEW_NAME, {
                 KRMaskView()
             })
+            // Register WeChat mini-program native component wrappers (wx.*)
+            registerWXRenderView(this)
             // Delegate to the external host project to expose their own views
             delegate.registerExternalRenderView(this)
+        }
+    }
+
+    /**
+     * Register built-in wrappers for WeChat mini-program native components (prefixed with `WX`).
+     */
+    private fun registerWXRenderView(kuiklyRenderExport: IKuiklyRenderExport) {
+        with(kuiklyRenderExport) {
+            // Register `button` component template alias so that Transform can recognize it
+            Transform.addComponentsAlias(
+                MiniWXButtonViewElement.NODE_NAME,
+                MiniWXButtonViewElement.componentsAlias
+            )
+            // Register KRWXButtonView
+            renderViewExport(KRWXButtonView.VIEW_NAME, {
+                KRWXButtonView()
+            })
         }
     }
 

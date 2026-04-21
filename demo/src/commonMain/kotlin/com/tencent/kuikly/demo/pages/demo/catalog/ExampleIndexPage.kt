@@ -274,10 +274,24 @@ internal class ExampleIndexPage : BasePager() {
             declarativeExampleUrl = generateJumpUrl("VideoExamplePage")
         })
 
+        // 仅在微信小程序平台展示 WX 组件示例
+        if (pageData.params.optString(IS_MINI_PROGRAM) == "1") {
+            itemList.add(ExampleItemData().apply {
+                avatarText = "WX"
+                titleText = "WX Demo"
+                subtitleText = "微信小程序封装组件示例（WXButton 等）"
+                declarativeExampleUrl = generateJumpUrl("WXExamplePage")
+            })
+        }
+
     }
 
     private fun generateJumpUrl(pagerName: String) : String {
         return pagerName
+    }
+
+    companion object {
+        private const val IS_MINI_PROGRAM = "is_miniprogram"
     }
 
 }

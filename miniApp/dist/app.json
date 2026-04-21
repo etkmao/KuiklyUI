@@ -116,7 +116,8 @@
       "pages/material_demo/index",
       "pages/PopMenuDialogDemo/index",
       "pages/AnchoredDraggableDemo/index",
-      "pages/ScaffoldDemo/index"
+      "pages/ScaffoldDemo/index",
+      "pages/WXExamplePage/index"
     ],
   "window":{
     "backgroundTextStyle":"light",
