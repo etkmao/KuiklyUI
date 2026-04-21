@@ -465,3 +465,15 @@
 <template name="tmpl_0_77">
   <input class="{{i.cl}}" value="{{i.value}}" type="{{xs.b(i.type,'text')}}" password="{{xs.b(i.password,false)}}" placeholder="{{i.placeholder}}" placeholder-style="{{i.placeholderStyle}}" placeholder-class="{{xs.b(i.placeholderClass,'input-placeholder')}}" disabled="{{xs.b(i.disabled,false)}}" maxlength="{{xs.b(i.maxLength,140)}}" focus="{{xs.b(i.focus,false)}}" confirm-type="{{xs.b(i.confirmType,'done')}}" confirm-hold="{{xs.b(i.confirmHold,false)}}" adjust-position="{{xs.b(i.adjustPosition,true)}}" hold-keyboard="{{xs.b(i.holdKeyboard,false)}}" cursor-spacing="{{xs.b(i.cursorSpacing,0)}}" cursor="{{xs.b(i.cursor,-1)}}" selection-start="{{xs.b(i.selectionStart,-1)}}" selection-end="{{xs.b(i.selectionEnd,-1)}}" name="{{i.name}}" bindinput="eh" bindfocus="eh" bindblur="eh" bindconfirm="eh" bindkeyboardheightchange="eh" bindnicknamereview="eh" bindtouchstart="eh" bindtouchmove="eh" bindtouchend="eh" bindtouchcancel="eh" bindlongpress="eh" animation="{{i.p0}}" style="{{i.st}}" bindtap="eh" id="{{i.uid||i.sid}}" data-sid="{{i.sid}}" />
 </template>
+
+<template name="tmpl_0_78">
+  <textarea class="{{i.cl}}" value="{{i.value}}" placeholder="{{i.placeholder}}" placeholder-style="{{i.placeholderStyle}}" placeholder-class="{{xs.b(i.placeholderClass,'textarea-placeholder')}}" disabled="{{xs.b(i.disabled,false)}}" maxlength="{{xs.b(i.maxLength,140)}}" auto-focus="{{xs.b(i.autoFocus,false)}}" focus="{{xs.b(i.focus,false)}}" auto-height="{{xs.b(i.autoHeight,false)}}" fixed="{{xs.b(i.fixed,false)}}" cursor-spacing="{{xs.b(i.cursorSpacing,0)}}" cursor="{{xs.b(i.cursor,-1)}}" show-confirm-bar="{{xs.b(i.showConfirmBar,true)}}" selection-start="{{xs.b(i.selectionStart,-1)}}" selection-end="{{xs.b(i.selectionEnd,-1)}}" adjust-position="{{xs.b(i.adjustPosition,true)}}" hold-keyboard="{{xs.b(i.holdKeyboard,false)}}" disable-default-padding="{{xs.b(i.disableDefaultPadding,false)}}" confirm-type="{{xs.b(i.confirmType,'return')}}" confirm-hold="{{xs.b(i.confirmHold,false)}}" name="{{i.name}}" bindinput="eh" bindfocus="eh" bindblur="eh" bindconfirm="eh" bindlinechange="eh" bindkeyboardheightchange="eh" bindtouchstart="eh" bindtouchmove="eh" bindtouchend="eh" bindtouchcancel="eh" bindlongpress="eh" animation="{{i.p0}}" style="{{i.st}}" bindtap="eh" id="{{i.uid||i.sid}}" data-sid="{{i.sid}}"></textarea>
+</template>
+
+<template name="tmpl_0_79">
+  <picker class="{{i.cl}}" mode="{{xs.b(i.mode,'selector')}}" disabled="{{xs.b(i.disabled,false)}}" name="{{i.name}}" range="{{i.range}}" range-key="{{i.rangeKey}}" value="{{i.value}}" start="{{i.start}}" end="{{i.end}}" fields="{{xs.b(i.fields,'day')}}" header-text="{{i.headerText}}" fixed="{{xs.b(i.fixed,false)}}" bindchange="eh" bindcolumnchange="eh" bindcancel="eh" bindtap="eh" bindtouchstart="eh" bindtouchmove="eh" bindtouchend="eh" bindlongpress="eh" animation="{{i.p0}}" style="{{i.st}}" id="{{i.uid||i.sid}}" data-sid="{{i.sid}}">
+    <block wx:for="{{i.cn}}" wx:key="sid">
+      <template is="{{xs.a(c, item.nn, l)}}" data="{{i:item,c:c+1}}" />
+    </block>
+  </picker>
+</template>

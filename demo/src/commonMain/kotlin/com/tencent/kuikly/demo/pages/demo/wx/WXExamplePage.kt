@@ -28,6 +28,10 @@ import com.tencent.kuikly.core.views.wx.WXButtonOpenType
 import com.tencent.kuikly.core.views.wx.WXInput
 import com.tencent.kuikly.core.views.wx.WXInputConfirmType
 import com.tencent.kuikly.core.views.wx.WXInputType
+import com.tencent.kuikly.core.views.wx.WXPicker
+import com.tencent.kuikly.core.views.wx.WXPickerMode
+import com.tencent.kuikly.core.views.wx.WXTextArea
+import com.tencent.kuikly.core.views.wx.WXTextAreaConfirmType
 import com.tencent.kuikly.demo.pages.base.BasePager
 import com.tencent.kuikly.demo.pages.demo.base.NavBar
 import com.tencent.kuikly.demo.pages.demo.kit_demo.DeclarativeDemo.Common.ViewExampleSectionHeader
@@ -40,6 +44,12 @@ internal class WXExamplePage : BasePager() {
     private var inputTextTip by observable("")
     private var inputNumberTip by observable("")
     private var inputConfirmTip by observable("尚未提交")
+    private var textareaContent by observable("")
+    private var textareaLineCount by observable(1)
+    private val pickerOptions = listOf("北京", "上海", "广州", "深圳", "成都")
+    private var pickerSelectedIndex by observable(0)
+    private var pickerDate by observable("2026-04-21")
+    private var pickerTime by observable("09:30")
 
     override fun body(): ViewBuilder {
         val ctx = this
@@ -370,6 +380,169 @@ internal class WXExamplePage : BasePager() {
                             padding(left = 12f, right = 12f)
                             disabled(true)
                             value("禁用状态，不可编辑")
+                        }
+                    }
+                }
+
+                ViewExampleSectionHeader {
+                    attr { title = "WXTextArea 多行输入：自动换行 / 换行回调" }
+                }
+                View {
+                    attr {
+                        flexDirectionColumn()
+                        padding(left = 16f, right = 16f, top = 12f, bottom = 12f)
+                    }
+                    WXTextArea {
+                        attr {
+                            minHeight(100f)
+                            backgroundColor(0xFFF5F5F5)
+                            borderRadius(6f)
+                            padding(left = 12f, right = 12f, top = 8f, bottom = 8f)
+                            placeholder("请输入多行文本。支持自动换行")
+                            autoHeight(true)
+                            maxLength(200)
+                            confirmType(WXTextAreaConfirmType.DONE)
+                            showConfirmBar(true)
+                        }
+                        event {
+                            onInput { detail ->
+                                KLog.i("WXExamplePage", "textarea onInput: $detail")
+                                ctx.textareaContent = detail.optString("data")
+                            }
+                            onLineChange { detail ->
+                                KLog.i("WXExamplePage", "textarea onLineChange: $detail")
+                                // 待解析 JSON 可获取 lineCount，此处简单计算显示
+                                ctx.textareaLineCount = ctx.textareaContent.count { it == '\n' } + 1
+                            }
+                        }
+                    }
+                    Text {
+                        attr {
+                            marginTop(8f)
+                            fontSize(12f)
+                            color(0xFF666666)
+                            text("当前内容长度：${ctx.textareaContent.length}，行数估算：${ctx.textareaLineCount}")
+                        }
+                    }
+                }
+
+                ViewExampleSectionHeader {
+                    attr { title = "WXPicker 选择器：selector" }
+                }
+                View {
+                    attr {
+                        flexDirectionColumn()
+                        padding(left = 16f, right = 16f, top = 12f, bottom = 12f)
+                    }
+                    WXPicker {
+                        attr {
+                            mode(WXPickerMode.SELECTOR)
+                            range(ctx.pickerOptions)
+                            valueIndex(ctx.pickerSelectedIndex)
+                        }
+                        event {
+                            onChange { detail ->
+                                KLog.i("WXExamplePage", "picker onChange: $detail")
+                                val data = detail.optString("data")
+                                val index = Regex("\"value\":(\\d+)")
+                                    .find(data)?.groupValues?.getOrNull(1)?.toIntOrNull()
+                                if (index != null) {
+                                    ctx.pickerSelectedIndex = index
+                                }
+                            }
+                            onCancel { KLog.i("WXExamplePage", "picker onCancel") }
+                        }
+                        View {
+                            attr {
+                                height(40f)
+                                backgroundColor(0xFFF5F5F5)
+                                borderRadius(6f)
+                                padding(left = 12f, right = 12f)
+                                alignItemsCenter()
+                                flexDirectionRow()
+                            }
+                            Text {
+                                attr {
+                                    fontSize(14f)
+                                    color(0xFF333333)
+                                    text("当前城市：${ctx.pickerOptions[ctx.pickerSelectedIndex]}（点我选择）")
+                                }
+                            }
+                        }
+                    }
+                }
+
+                ViewExampleSectionHeader {
+                    attr { title = "WXPicker 日期 / 时间 选择器" }
+                }
+                View {
+                    attr {
+                        flexDirectionColumn()
+                        padding(left = 16f, right = 16f, top = 12f, bottom = 12f)
+                    }
+                    WXPicker {
+                        attr {
+                            mode(WXPickerMode.DATE)
+                            start("2020-01-01")
+                            end("2030-12-31")
+                            value(ctx.pickerDate)
+                        }
+                        event {
+                            onChange { detail ->
+                                val data = detail.optString("data")
+                                val match = Regex("\"value\":\"(.*?)\"")
+                                    .find(data)?.groupValues?.getOrNull(1)
+                                if (!match.isNullOrEmpty()) ctx.pickerDate = match
+                            }
+                        }
+                        View {
+                            attr {
+                                height(40f)
+                                backgroundColor(0xFFF5F5F5)
+                                borderRadius(6f)
+                                padding(left = 12f, right = 12f)
+                                alignItemsCenter()
+                                flexDirectionRow()
+                            }
+                            Text {
+                                attr {
+                                    fontSize(14f)
+                                    color(0xFF333333)
+                                    text("日期：${ctx.pickerDate}（点我选择）")
+                                }
+                            }
+                        }
+                    }
+                    WXPicker {
+                        attr {
+                            marginTop(12f)
+                            mode(WXPickerMode.TIME)
+                            value(ctx.pickerTime)
+                        }
+                        event {
+                            onChange { detail ->
+                                val data = detail.optString("data")
+                                val match = Regex("\"value\":\"(.*?)\"")
+                                    .find(data)?.groupValues?.getOrNull(1)
+                                if (!match.isNullOrEmpty()) ctx.pickerTime = match
+                            }
+                        }
+                        View {
+                            attr {
+                                height(40f)
+                                backgroundColor(0xFFF5F5F5)
+                                borderRadius(6f)
+                                padding(left = 12f, right = 12f)
+                                alignItemsCenter()
+                                flexDirectionRow()
+                            }
+                            Text {
+                                attr {
+                                    fontSize(14f)
+                                    color(0xFF333333)
+                                    text("时间：${ctx.pickerTime}（点我选择）")
+                                }
+                            }
                         }
                     }
                 }

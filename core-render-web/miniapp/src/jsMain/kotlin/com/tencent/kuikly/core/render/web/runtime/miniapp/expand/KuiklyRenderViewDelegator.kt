@@ -25,8 +25,12 @@ import com.tencent.kuikly.core.render.web.expand.components.list.KRListView
 import com.tencent.kuikly.core.render.web.runtime.miniapp.core.Transform
 import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXButtonViewElement
 import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXInputViewElement
+import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXPickerViewElement
+import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXTextAreaViewElement
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXButtonView
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXInputView
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXPickerView
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXTextAreaView
 import com.tencent.kuikly.core.render.web.expand.module.KRCalendarModule
 import com.tencent.kuikly.core.render.web.expand.module.KRCodecModule
 import com.tencent.kuikly.core.render.web.expand.module.KRLogModule
@@ -471,6 +475,24 @@ class KuiklyRenderViewDelegator(private val delegate: KuiklyRenderViewDelegatorD
             // Register KRWXInputView
             renderViewExport(KRWXInputView.VIEW_NAME, {
                 KRWXInputView()
+            })
+            // Register `wx-textarea` component template alias so that Transform can recognize it
+            Transform.addComponentsAlias(
+                MiniWXTextAreaViewElement.NODE_NAME,
+                MiniWXTextAreaViewElement.componentsAlias
+            )
+            // Register KRWXTextAreaView
+            renderViewExport(KRWXTextAreaView.VIEW_NAME, {
+                KRWXTextAreaView()
+            })
+            // Register `wx-picker` component template alias so that Transform can recognize it
+            Transform.addComponentsAlias(
+                MiniWXPickerViewElement.NODE_NAME,
+                MiniWXPickerViewElement.componentsAlias
+            )
+            // Register KRWXPickerView
+            renderViewExport(KRWXPickerView.VIEW_NAME, {
+                KRWXPickerView()
             })
         }
     }
