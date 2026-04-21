@@ -37,6 +37,8 @@ import com.tencent.kuikly.core.views.wx.WXPicker
 import com.tencent.kuikly.core.views.wx.WXPickerMode
 import com.tencent.kuikly.core.views.wx.WXTextArea
 import com.tencent.kuikly.core.views.wx.WXTextAreaConfirmType
+import com.tencent.kuikly.core.module.RouterModule
+import com.tencent.kuikly.core.nvi.serialization.json.JSONObject
 import com.tencent.kuikly.core.views.wx.WXVideo
 import com.tencent.kuikly.core.views.wx.WXVideoObjectFit
 import com.tencent.kuikly.demo.pages.base.BasePager
@@ -67,6 +69,12 @@ internal class WXExamplePage : BasePager() {
     private var mapCenterTip by observable("北京天安门")
     private var mapMarkerTip by observable("尚未点击 marker")
     private var mapRegionChangeTip by observable("视图无变化")
+
+    private fun openWebViewDemo(url: String) {
+        val params = JSONObject().apply { put("url", url) }
+        acquireModule<RouterModule>(RouterModule.MODULE_NAME)
+            .openPage("WXWebViewDemoPage", params)
+    }
 
     override fun body(): ViewBuilder {
         val ctx = this
@@ -926,6 +934,61 @@ internal class WXExamplePage : BasePager() {
                             fontSize(12f)
                             color(0xFF666666)
                             text("交互：${ctx.mapMarkerTip}")
+                        }
+                    }
+                }
+
+                // ---------------- WXWebView 跳转入口 ----------------
+                ViewExampleSectionHeader { attr { title = "WXWebView 跳转入口" } }
+                View {
+                    attr {
+                        flexDirectionColumn()
+                        padding(left = 16f, right = 16f, top = 12f, bottom = 20f)
+                    }
+                    Text {
+                        attr {
+                            fontSize(12f)
+                            color(0xFF999999)
+                            marginBottom(8f)
+                            text("说明：微信小程序 web-view 会自动占满整页，因此在独立子页面展示。")
+                        }
+                    }
+                    View {
+                        attr {
+                            flexDirectionRow()
+                            justifyContentSpaceAround()
+                        }
+                        WXButton {
+                            attr {
+                                type("default")
+                                size("mini")
+                                titleAttr {
+                                    text("官方文档")
+                                    fontSize(14f)
+                                }
+                            }
+                            event {
+                                click {
+                                    ctx.openWebViewDemo(
+                                        "https://developers.weixin.qq.com/miniprogram/dev/component/web-view.html"
+                                    )
+                                }
+                            }
+                        }
+                        WXButton {
+                            attr {
+                                type("primary")
+                                size("mini")
+                                titleAttr {
+                                    text("Kuikly 介绍")
+                                    fontSize(14f)
+                                }
+                            }
+                            event {
+                                click {
+                                    ctx.openWebViewDemo("https://github.com/Tencent-TDS/KuiklyUI")
+                                }
+                            }
                         }
                     }
                 }

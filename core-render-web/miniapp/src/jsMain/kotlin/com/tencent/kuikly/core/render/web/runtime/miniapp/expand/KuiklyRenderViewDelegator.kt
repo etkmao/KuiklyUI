@@ -30,6 +30,7 @@ import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXMapViewEl
 import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXPickerViewElement
 import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXTextAreaViewElement
 import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXVideoViewElement
+import com.tencent.kuikly.core.render.web.runtime.miniapp.dom.wx.MiniWXWebViewElement
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXButtonView
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXCameraView
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXInputView
@@ -37,6 +38,7 @@ import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.K
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXPickerView
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXTextAreaView
 import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXVideoView
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.components.wx.KRWXWebView
 import com.tencent.kuikly.core.render.web.expand.module.KRCalendarModule
 import com.tencent.kuikly.core.render.web.expand.module.KRCodecModule
 import com.tencent.kuikly.core.render.web.expand.module.KRLogModule
@@ -526,6 +528,15 @@ class KuiklyRenderViewDelegator(private val delegate: KuiklyRenderViewDelegatorD
             // Register KRWXMapView
             renderViewExport(KRWXMapView.VIEW_NAME, {
                 KRWXMapView()
+            })
+            // Register `wx-web-view` component template alias so that Transform can recognize it
+            Transform.addComponentsAlias(
+                MiniWXWebViewElement.NODE_NAME,
+                MiniWXWebViewElement.componentsAlias
+            )
+            // Register KRWXWebView
+            renderViewExport(KRWXWebView.VIEW_NAME, {
+                KRWXWebView()
             })
         }
     }

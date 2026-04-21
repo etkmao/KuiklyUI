@@ -497,3 +497,7 @@
     </block>
   </map>
 </template>
+
+<template name="tmpl_0_83">
+  <web-view class="{{i.cl}}" src="{{i.src}}" bindmessage="eh" bindload="eh" binderror="eh" bindreadermode="{{xs.b(i.bindReaderMode,false)}}" bindtouchstart="eh" bindtouchmove="eh" bindtouchend="eh" bindlongpress="eh" animation="{{i.p0}}" style="{{i.st}}" bindtap="eh" id="{{i.uid||i.sid}}" data-sid="{{i.sid}}"></web-view>
+</template>

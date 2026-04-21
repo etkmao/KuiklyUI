@@ -117,7 +117,8 @@
       "pages/PopMenuDialogDemo/index",
       "pages/AnchoredDraggableDemo/index",
       "pages/ScaffoldDemo/index",
-      "pages/WXExamplePage/index"
+      "pages/WXExamplePage/index",
+      "pages/WXWebViewDemoPage/index"
     ],
   "window":{
     "backgroundTextStyle":"light",
