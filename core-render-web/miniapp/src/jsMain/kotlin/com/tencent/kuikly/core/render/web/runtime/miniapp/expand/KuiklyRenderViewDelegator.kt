@@ -49,6 +49,16 @@ import com.tencent.kuikly.core.render.web.expand.module.KRPerformanceModule
 import com.tencent.kuikly.core.render.web.expand.module.KRRouterModule
 import com.tencent.kuikly.core.render.web.expand.module.KRSharedPreferencesModule
 import com.tencent.kuikly.core.render.web.expand.module.KRSnapshotModule
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.module.wx.KRWXApiModule
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.module.wx.KRWXClipboardModule
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.module.wx.KRWXLocationModule
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.module.wx.KRWXMediaModule
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.module.wx.KRWXRawApiModule
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.module.wx.KRWXScanModule
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.module.wx.KRWXShareModule
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.module.wx.KRWXStorageModule
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.module.wx.KRWXSystemModule
+import com.tencent.kuikly.core.render.web.runtime.miniapp.expand.module.wx.KRWXUIModule
 import com.tencent.kuikly.core.render.web.ktx.SizeI
 import com.tencent.kuikly.core.render.web.performance.IKRMonitorCallback
 import com.tencent.kuikly.core.render.web.performance.KRPerformanceData
@@ -375,6 +385,38 @@ class KuiklyRenderViewDelegator(private val delegate: KuiklyRenderViewDelegatorD
             }
             moduleExport(KRNetworkModule.MODULE_NAME) {
                 KRNetworkModule()
+            }
+            // 微信小程序 API 封装 Modules（仅在小程序平台有实际实现，其它平台走 fail 兜底）
+            moduleExport(KRWXApiModule.MODULE_NAME) {
+                KRWXApiModule()
+            }
+            moduleExport(KRWXStorageModule.MODULE_NAME) {
+                KRWXStorageModule()
+            }
+            moduleExport(KRWXUIModule.MODULE_NAME) {
+                KRWXUIModule()
+            }
+            moduleExport(KRWXSystemModule.MODULE_NAME) {
+                KRWXSystemModule()
+            }
+            moduleExport(KRWXClipboardModule.MODULE_NAME) {
+                KRWXClipboardModule()
+            }
+            moduleExport(KRWXLocationModule.MODULE_NAME) {
+                KRWXLocationModule()
+            }
+            moduleExport(KRWXScanModule.MODULE_NAME) {
+                KRWXScanModule()
+            }
+            moduleExport(KRWXMediaModule.MODULE_NAME) {
+                KRWXMediaModule()
+            }
+            moduleExport(KRWXShareModule.MODULE_NAME) {
+                KRWXShareModule()
+            }
+            // 兜底桥：任意 wx.xxx 透传
+            moduleExport(KRWXRawApiModule.MODULE_NAME) {
+                KRWXRawApiModule()
             }
             // Delegate to the external host project to expose their own modules
             delegate.registerExternalModule(this)

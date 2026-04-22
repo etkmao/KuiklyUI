@@ -72,3 +72,11 @@ demo里面的src/commonMain/assets下的文件，需要复制到dist/assets目�
 详细说明、完整组件清单、Demo 位置，以及如何自行扩展 / 使用 AI 辅助生成，请参考：
 
 - [微信小程序内置组件接入](miniapp-wx-components.md)
+
+## 微信小程序 API
+
+除了组件封装外，Kuikly 还提供了对微信小程序常用 API（如 ``wx.login`` / ``wx.showToast`` / ``wx.setStorage`` / ``wx.scanCode`` / ``wx.getLocation`` 等）的**强类型 DSL 封装**，并提供**兜底通用桥**让业务一行代码调用任意 ``wx.xxx``。
+
+详细清单、使用示例、自行扩展指南与 AI Prompt 模板，请参考：
+
+- [微信小程序 API 接入](miniapp-wx-apis.md)
