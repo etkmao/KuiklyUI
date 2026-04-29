@@ -722,6 +722,14 @@ object RichTextProcessor : IRichTextProcessor {
         // Calculate span offset top
         calculateSpanOffsetTop(linesSizeList, view)
 
+        // Determine which placeholder imageSpans are not visible any more
+        // after line-clamp & lineBreakMargin are applied, and stash their
+        // indices into `clampedImageSpanIndices`. `insertPlaceHolderImageView`
+        // will consult this set to hide both the inner rich-text <img> and
+        // the outer <view><image/></view> wrapper so the truncated image
+        // won't leak out (e.g. onto the reserved blank area).
+        computeClampedImageSpans(constraintSize, view, linesSizeList)
+
         // Get occupied size position information based on the final size list
         return calculateTotalSize(linesSizeList)
     }
@@ -1103,18 +1111,63 @@ object RichTextProcessor : IRichTextProcessor {
                 val imgSpan = parentView.imageSpanList[insertIndex]
                 val childSpan = parentView.childSpanList[parentView.childSpanList.indexOf(imgSpan)]
                     .unsafeCast<MiniSpanElement>()
-                childSpan.textContent = "<img style='${
-                    getPlaceHolderImageStyle(view)
-                }' mode='${
-                    (view.firstElementChild as MiniImageElement).mode
-                }' src='${image.src}' />"
-                // Set image container corner
-                childSpan.style.borderTopLeftRadius = view.style.borderTopLeftRadius
-                childSpan.style.borderTopRightRadius = view.style.borderTopRightRadius
-                childSpan.style.borderBottomLeftRadius = view.style.borderBottomLeftRadius
-                childSpan.style.borderBottomRightRadius = view.style.borderBottomRightRadius
+
+                // Always associate the outer wrapper view with this imgSpan
+                // so that a LATER measurement pass (which may decide this
+                // imageSpan is clamped only after the wrapper has been
+                // appended) can still find and hide the wrapper in-place.
+                imgSpan.asDynamic().__kuiklyImageSpanView = view
+
+                // If the latest measurement has decided this imageSpan is
+                // invisible (beyond `numberOfLines`, or protruding into the
+                // `lineBreakMargin` reserved blank on the last visible line),
+                // then hide everything associated with it so no image leaks
+                // out:
+                //   - clear the rich-text placeholder span's textContent so
+                //     the inner <img> html is not written into `nodes`;
+                //   - hide the outer wrapper view AND its inner <image>
+                //     element which are positioned absolutely on top of the
+                //     rich-text by the layout engine.
+                val shouldHide = parentView.clampedImageSpanIndices.contains(insertIndex)
+                if (shouldHide) {
+                    childSpan.textContent = ""
+                    // Clear any previously set corner radius so the empty
+                    // span doesn't draw a tiny rounded rect placeholder.
+                    childSpan.style.borderTopLeftRadius = ""
+                    childSpan.style.borderTopRightRadius = ""
+                    childSpan.style.borderBottomLeftRadius = ""
+                    childSpan.style.borderBottomRightRadius = ""
+                    // Hide the wrapper view and its inner image element.
+                    view.style.display = "none"
+                    view.firstElementChild?.style?.display = "none"
+                } else {
+                    childSpan.textContent = "<img style='${
+                        getPlaceHolderImageStyle(view)
+                    }' mode='${
+                        (view.firstElementChild as MiniImageElement).mode
+                    }' src='${image.src}' />"
+                    // Set image container corner
+                    childSpan.style.borderTopLeftRadius = view.style.borderTopLeftRadius
+                    childSpan.style.borderTopRightRadius = view.style.borderTopRightRadius
+                    childSpan.style.borderBottomLeftRadius = view.style.borderBottomLeftRadius
+                    childSpan.style.borderBottomRightRadius = view.style.borderBottomRightRadius
+                    // In case this imageSpan was previously hidden in an
+                    // earlier layout pass, make sure it's visible again.
+                    if (view.style.display == "none") {
+                        view.style.display = ""
+                    }
+                    if (view.firstElementChild?.style?.display == "none") {
+                        view.firstElementChild?.style?.display = "block"
+                    }
+                }
+
                 // Update rich text
-                parentView.spanHtml = getChildSpanHtml(parentView)
+                // IMPORTANT: keep in sync with `setRichTextValues` —— the
+                // two right-floating spans produced by `buildFloatSpansHtml`
+                // MUST be prepended, otherwise the `lineBreakMargin`
+                // reserved blank on the last visible line would be wiped
+                // out every time a placeholder image wrapper is inserted.
+                parentView.spanHtml = buildFloatSpansHtml(parentView) + getChildSpanHtml(parentView)
                 // First save rich text placeholder html content
                 val richTextViewHtml = parentView.divHtml
                 // Throttled execution update node html
@@ -1126,6 +1179,94 @@ object RichTextProcessor : IRichTextProcessor {
                 Log.error("set placeholder image error: $e")
             }
 
+        }
+    }
+
+    /**
+     * Refresh [KRRichTextView.clampedImageSpanIndices] after a measurement
+     * pass. Any imageSpan that ends up either:
+     *   (a) landing on a line that will be clipped by `numberOfLines`, or
+     *   (b) intruding into the right-side blank reserved by
+     *       `lineBreakMargin` on the last visible line,
+     * will be marked as "clamped" so the render side
+     * ([insertPlaceHolderImageView]) hides both its inner <img> html node
+     * and its outer <view><image/></view> wrapper.
+     *
+     * In addition to marking the index, this function also eagerly hides
+     * any already-associated wrapper view (when the wrapper arrived BEFORE
+     * measurement completed and was therefore rendered as a normal image).
+     * Symmetrically, wrappers that were hidden in a previous layout pass
+     * but are no longer clamped will be made visible again.
+     */
+    private fun computeClampedImageSpans(
+        constraintSize: SizeF,
+        view: KRRichTextView,
+        linesSizeList: JsArray<SizeF>,
+    ) {
+        // Always reset so repeated layout passes produce correct results.
+        view.clampedImageSpanIndices.clear()
+        if (view.imageSpanCount <= 0) return
+
+        val maxLines = view.numberOfLines
+        val lineBreakMargin = view.getLineBreakMargin()
+        val hasMaxLines = maxLines in 1..Int.MAX_VALUE
+        val lineBreakActive = lineBreakMargin > 0f && hasMaxLines
+        val effectiveWidth = if (lineBreakActive && constraintSize.width > lineBreakMargin) {
+            constraintSize.width - lineBreakMargin
+        } else {
+            constraintSize.width
+        }
+        val totalLines = linesSizeList.length
+
+        // Walk richTextSpanList in order; the i-th placeholder span (width != 0)
+        // corresponds to imageSpanList[i] / insertIndex = i.
+        var imageIndex = 0
+        view.richTextSpanList.forEach { span ->
+            if (span.width == 0f) return@forEach
+            val idx = imageIndex
+            imageIndex += 1
+
+            val lineIndex = span.lineIndex
+            val beyondClamp = hasMaxLines && lineIndex >= maxLines
+            // When lineBreakMargin is active, reserve the right-side blank
+            // on the LAST VISIBLE line. If an imageSpan sits on that line
+            // and its right edge exceeds the effective width, it would
+            // overlap the reserved blank → hide it.
+            val lastVisibleLineIndex = if (hasMaxLines) {
+                (maxLines - 1).coerceAtMost(totalLines - 1)
+            } else {
+                totalLines - 1
+            }
+            val intrudeReserved = lineBreakActive &&
+                lineIndex == lastVisibleLineIndex &&
+                (span.offsetLeft + span.width) > effectiveWidth
+
+            val shouldHide = beyondClamp || intrudeReserved
+            // Apply to the already-associated wrapper view, if any. This
+            // is what actually removes the leaked image when the wrapper
+            // was appended BEFORE the current measurement pass decided it
+            // was clamped.
+            if (idx < view.imageSpanList.length.toInt()) {
+                val imgSpan = view.imageSpanList[idx]
+                val outer = imgSpan.asDynamic().__kuiklyImageSpanView
+                    .unsafeCast<MiniElement?>()
+                if (outer != null) {
+                    if (shouldHide) {
+                        outer.style.display = "none"
+                        outer.firstElementChild?.style?.display = "none"
+                    } else {
+                        if (outer.style.display == "none") {
+                            outer.style.display = ""
+                        }
+                        if (outer.firstElementChild?.style?.display == "none") {
+                            outer.firstElementChild?.style?.display = "block"
+                        }
+                    }
+                }
+            }
+            if (shouldHide) {
+                view.clampedImageSpanIndices.add(idx)
+            }
         }
     }
 }

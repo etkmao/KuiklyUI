@@ -147,6 +147,15 @@ class KRRichTextView : IKuiklyRenderViewExport, IKuiklyRenderShadowExport {
     // Placeholder Span list
     val imageSpanList: JsArray<Any> = JsArray()
 
+    // Indices (into [imageSpanList]) of ImageSpans that the latest
+    // measurement determined to be "invisible" after line-clamp &
+    // lineBreakMargin are taken into account, and therefore must be
+    // hidden at render time (both the rich-text inner <img> HTML and
+    // the outer <view><image/></view> wrapper). Refreshed every time
+    // measurement runs; consulted by `insertPlaceHolderImageView` when
+    // the wrapper view arrives (the two events are not ordered).
+    val clampedImageSpanIndices: MutableSet<Int> = mutableSetOf()
+
     // Number of placeholder images
     var imageSpanCount = 0
 

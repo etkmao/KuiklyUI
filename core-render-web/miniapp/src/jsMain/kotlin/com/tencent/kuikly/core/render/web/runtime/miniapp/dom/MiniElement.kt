@@ -583,7 +583,7 @@ open class MiniElement(var nodeName: String, val nodeType: Int) {
         if (
             view.childNodes.length == 1 &&
             view.firstElementChild is MiniImageElement &&
-            view.firstElementChild?.style?.cssText == RICH_TEXT_PLACEHOLDER_IMAGE_STYLE
+            isPlaceholderImageStyle(view.firstElementChild?.style?.cssText)
         ) {
             // Save placeholder image node
             saveImageSpanView(view)
@@ -623,6 +623,23 @@ open class MiniElement(var nodeName: String, val nodeType: Int) {
         // Rich text placeholder image special style
         private const val RICH_TEXT_PLACEHOLDER_IMAGE_STYLE =
             "box-sizing: border-box; width: 100%; height: 100%; display: block;"
+
+        /**
+         * Whether the given image element cssText belongs to a rich-text
+         * placeholder image. The full expected form is
+         * [RICH_TEXT_PLACEHOLDER_IMAGE_STYLE], but some mini-program
+         * runtimes drop `box-sizing` during cssText serialization. To stay
+         * robust we fall back to matching the three mandatory markers that
+         * together uniquely identify a placeholder image (given we've
+         * already required the wrapper to have exactly one image child).
+         */
+        private fun isPlaceholderImageStyle(cssText: String?): Boolean {
+            if (cssText.isNullOrEmpty()) return false
+            if (cssText == RICH_TEXT_PLACEHOLDER_IMAGE_STYLE) return true
+            return cssText.contains("width: 100%") &&
+                cssText.contains("height: 100%") &&
+                cssText.contains("display: block")
+        }
     }
 }
 
