@@ -72,6 +72,43 @@ class MiniTextAreaElement(
         // custom marker (instead of sniffing the `placeholderColor` setter via `in`) keeps
         // the detection decoupled from Kotlin/JS codegen details of `@JsName` accessors.
         this.asDynamic().__krSupportsPlaceholderColor = true
+        // Install a resident cursor-sync tap on `focus` / `blur` / `confirm` so that
+        // manual caret moves (tapping into the middle of the text, long-press-drag caret
+        // on iOS, etc.) propagate into `cachedCursorIndex`. WX native <textarea> does NOT
+        // emit `bindselectionchange`, but every focus/blur/confirm event detail carries
+        // the latest `cursor` offset. Registering here — before any upper-layer
+        // `addEventListener("focus", ...)` call — ensures our shadow update runs first
+        // and user handlers see a fresh `selectionStart` when they read it. Kept in
+        // strict parity with MiniInputElement.installCursorSyncTap.
+        installCursorSyncTap()
+    }
+
+    /**
+     * Subscribe low-priority cursor-sync handlers to WX native `focus` / `blur` /
+     * `confirm` events. These are append-style registrations (MiniEvent handler list
+     * is a simple array, appending never displaces existing handlers), so they
+     * coexist with any user-level listener the shared KRTextAreaView attaches.
+     */
+    private fun installCursorSyncTap() {
+        val cursorSync: EventHandler = { event ->
+            // `event` is already `dynamic` (EventHandler = (dynamic) -> Unit), so direct
+            // property access is a raw JS member read — no method-call generation. Do NOT
+            // route through `asDynamic()` here: for `dynamic` receivers the Kotlin/JS
+            // backend emits a literal `.asDynamic()` method call in some codegen paths,
+            // and the underlying WX mpEvent has no such method, producing
+            // `i.asDynamic is not a function` at runtime.
+            val rawDetail: dynamic = event.detail
+            val rawCursor: dynamic =
+                if (rawDetail != null) rawDetail.cursor else js("undefined")
+            if (jsTypeOf(rawCursor) == "number") {
+                cachedCursorIndex = rawCursor.unsafeCast<Int>()
+            }
+        }
+        // Call super directly to bypass this class's override. All three raw WX events
+        // are already statically bound on <textarea> by the mini-program template.
+        super.addEventListener(EVENT_FOCUS, cursorSync, null)
+        super.addEventListener(EVENT_BLUR, cursorSync, null)
+        super.addEventListener(EVENT_CONFIRM, cursorSync, null)
     }
 
     // Mini program doesn't have readOnly, using disabled instead
@@ -144,12 +181,23 @@ class MiniTextAreaElement(
     }
 
     /**
-     * Latest cursor offset. See [MiniInputElement.cachedCursorIndex] for the rationale —
-     * WX native `<textarea>` shares the same `bindinput.detail.cursor` / `selection-start`
-     * contract as `<input>`, so we mirror the same shadow-value strategy here.
+     * Latest cursor offset. See [MiniInputElement.cachedCursorIndex] for the full
+     * rationale — WX native `<textarea>` shares the same event contract as `<input>`
+     * (`bindinput.detail.cursor` / `bindfocus` / `bindblur` / `bindconfirm`), so we
+     * mirror the exact same shadow-value strategy here and keep it in sync from:
+     * 1. `bindinput` post-edit caret.
+     * 2. `bindfocus` / `bindblur` / `bindconfirm` focus-boundary caret — covers
+     *    "user tapped into the middle of the text" on re-tap (WX fires blur+focus
+     *    on re-tap, both with the new `cursor`).
+     * 3. Explicit programmatic write via [setSelectionRange].
      *
-     * A value of -1 means "unknown"; [selectionStart] then falls back to the end of
-     * [value], matching typical append-at-end typing.
+     * Platform limitation: WX does NOT expose a `bindselectionchange` for
+     * `<textarea>`, so a caret move *within* a single focus session without any
+     * text being inserted/deleted cannot be observed. Subsequent reads of
+     * [selectionStart] return the last synced value — same as MiniInputElement.
+     *
+     * A value of -1 means "never observed"; [selectionStart] then falls back to
+     * the end of [value], matching typical append-at-end typing.
      */
     private var cachedCursorIndex: Int = -1
 
@@ -207,7 +255,11 @@ class MiniTextAreaElement(
                         value = event.target.value.unsafeCast<String>()
                     }
                     // Keep cursor shadow in sync with the post-edit caret reported by WX.
-                    val rawDetail: dynamic = event.asDynamic().detail
+                    // NOTE: `event` is already `dynamic`; do NOT call `.asDynamic()` on it.
+                    // On a `dynamic` receiver Kotlin/JS emits a literal `.asDynamic()`
+                    // method invocation in some codegen paths, which blows up at runtime on
+                    // the WX mpEvent object with `i.asDynamic is not a function`.
+                    val rawDetail: dynamic = event.detail
                     val rawCursor: dynamic =
                         if (rawDetail != null) rawDetail.cursor else js("undefined")
                     cachedCursorIndex = if (jsTypeOf(rawCursor) == "number") {
@@ -248,7 +300,9 @@ class MiniTextAreaElement(
                 }
                 val realMaxLength = { maxLength }
                 val bridge: EventHandler = { event ->
-                    val rawDetail: dynamic = event.asDynamic().detail
+                    // `event` is dynamic; direct field access avoids spurious `.asDynamic()`
+                    // method-call generation (see EVENT_INPUT note above).
+                    val rawDetail: dynamic = event.detail
                     val newValue: String = if (
                         rawDetail != null && jsTypeOf(rawDetail.value) == "string"
                     ) rawDetail.value.unsafeCast<String>() else ""
@@ -355,8 +409,21 @@ class MiniTextAreaElement(
                 // the shared KRTextAreaView listener can consume mini-program and H5 events
                 // in a single code path. WX does not expose an animation curve, so we report
                 // 0 (linear) which keeps the core-side KeyboardParams well-formed.
+                //
+                // Platform note (WX real devices): unlike Android/iOS native, a single focus
+                // on real WX devices typically fires `bindkeyboardheightchange` 2–3 times —
+                // commonly a synchronous snapshot with `duration=0` at the final height,
+                // followed by one or more transitional frames (e.g. an intermediate height
+                // with `duration>0`) before the last frame reports the final height again.
+                // This is WX runtime behaviour and differs by device / IME. We intentionally
+                // forward every frame as-is (no debounce / coalescing) so the mini-program
+                // callback has the same "fires-per-native-event" semantics as every other
+                // WX event this class forwards; any smoothing is left to upper layers (the
+                // Kuikly business code can filter by `duration` / last-seen `height`).
                 val heightChangeCallback: EventHandler = { event ->
-                    val rawDetail: dynamic = event.asDynamic().detail
+                    // `event` is dynamic; direct field access avoids spurious `.asDynamic()`
+                    // method-call generation on the WX mpEvent.
+                    val rawDetail: dynamic = event.detail
                     val normalizedDetail: dynamic = js("({})")
                     normalizedDetail.height =
                         if (rawDetail != null && jsTypeOf(rawDetail.height) != "undefined") rawDetail.height else 0
@@ -366,7 +433,7 @@ class MiniTextAreaElement(
                     val syntheticEvent: dynamic = js("({})")
                     syntheticEvent.type = EVENT_KEYBOARD_HEIGHT_CHANGE
                     syntheticEvent.detail = normalizedDetail
-                    syntheticEvent.target = event.asDynamic().target ?: this
+                    syntheticEvent.target = event.target ?: this
                     syntheticEvent.originalEvent = event
                     callback(syntheticEvent)
                 }
@@ -405,6 +472,14 @@ class MiniTextAreaElement(
         // KRTextAreaView via VisualViewport) and mini-program (forwarded from
         // WX native `bindkeyboardheightchange`) agree on.
         private const val EVENT_KEYBOARD_HEIGHT_CHANGE = "keyboardheightchange"
+        // WX native <textarea> focus / blur / confirm events. We subscribe to them
+        // internally to keep `cachedCursorIndex` in sync with manual caret moves (their
+        // detail carries the latest `cursor` offset). Do NOT intercept for any other
+        // purpose — user handlers registered via addEventListener must still propagate
+        // through `super.addEventListener` unchanged.
+        private const val EVENT_FOCUS = "focus"
+        private const val EVENT_BLUR = "blur"
+        private const val EVENT_CONFIRM = "confirm"
 
         // InputEvent.inputType values consumed by KRTextAreaView's beforeinput handler.
         // Kept as string literals (instead of reusing KRInputTypeConst) so this file has no

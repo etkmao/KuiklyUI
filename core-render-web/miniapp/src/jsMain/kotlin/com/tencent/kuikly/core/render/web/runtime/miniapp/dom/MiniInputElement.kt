@@ -137,6 +137,45 @@ class MiniInputElement(
         // custom marker (instead of sniffing the `placeholderColor` setter via `in`) keeps
         // the detection decoupled from Kotlin/JS codegen details of `@JsName` accessors.
         this.asDynamic().__krSupportsPlaceholderColor = true
+        // Install a resident cursor-sync tap on `focus` / `blur` / `confirm` so that
+        // manual caret moves (tapping into the middle of the text, long-press-drag caret
+        // on iOS, etc.) propagate into `cachedCursorIndex`. WX native <input> does NOT
+        // emit `bindselectionchange`, but every focus/blur/confirm event detail carries
+        // the latest `cursor` offset. Registering here — before any upper-layer
+        // `addEventListener("focus", ...)` call — ensures our shadow update runs first
+        // and user handlers see a fresh `selectionStart` when they read it. The handlers
+        // are registered via MiniElement.super so they don't route back into the
+        // EVENT_KEYDOWN / input bridges below.
+        installCursorSyncTap()
+    }
+
+    /**
+     * Subscribe low-priority cursor-sync handlers to WX native `focus` / `blur` /
+     * `confirm` events. These are append-style registrations (MiniEvent handler list
+     * is a simple array, appending never displaces existing handlers), so they
+     * coexist with any user-level listener the shared KRTextFieldView attaches.
+     */
+    private fun installCursorSyncTap() {
+        val cursorSync: EventHandler = { event ->
+            // `event` is already `dynamic` (EventHandler = (dynamic) -> Unit), so direct
+            // property access is a raw JS member read — no method-call generation. Do NOT
+            // route through `asDynamic()` here: for `dynamic` receivers the Kotlin/JS
+            // backend emits a literal `.asDynamic()` method call in some codegen paths,
+            // and the underlying WX mpEvent has no such method, producing
+            // `i.asDynamic is not a function` at runtime.
+            val rawDetail: dynamic = event.detail
+            val rawCursor: dynamic =
+                if (rawDetail != null) rawDetail.cursor else js("undefined")
+            if (jsTypeOf(rawCursor) == "number") {
+                cachedCursorIndex = rawCursor.unsafeCast<Int>()
+            }
+        }
+        // Call super directly to bypass this class's override (which would re-enter the
+        // KEYDOWN -> confirm adaptation for "keydown"). All three raw WX events are
+        // already statically bound on <input> by the mini-program template.
+        super.addEventListener(EVENT_FOCUS, cursorSync, null)
+        super.addEventListener(EVENT_BLUR, cursorSync, null)
+        super.addEventListener(EVENT_CONFIRM, cursorSync, null)
     }
 
     @JsName("focus")
@@ -150,15 +189,24 @@ class MiniInputElement(
     }
 
     /**
-     * Latest cursor offset observed from the WX native `<input>` `bindinput`
-     * (`detail.cursor`) or set programmatically via [setSelectionRange]. WX does not
-     * expose a synchronous "get cursor" API, so we keep a shadow value here that is
-     * kept in sync by the input bridge in [addEventListener].
+     * Latest cursor offset observed from the WX native `<input>`. Kept in sync from
+     * three sources:
+     * 1. `bindinput.detail.cursor` — post-edit caret after each keystroke / paste.
+     * 2. `bindfocus.detail.cursor` / `bindblur.detail.cursor` / `bindconfirm.detail.cursor`
+     *    — any focus-boundary carries the latest caret, which covers the common
+     *    "user tapped into the middle of the text" interaction (WX fires blur+focus
+     *    on a re-tap, both with the new `cursor`).
+     * 3. Explicit programmatic write via [setSelectionRange].
      *
-     * A value of -1 means "unknown" (the input has never received a `bindinput`
-     * event AND has never had its selection set programmatically). In that case we
-     * fall back to the end of [value] on read, matching the common intuition that a
-     * freshly focused/typed-into input places the caret at the end.
+     * Platform limitation: WX does NOT expose a `bindselectionchange` (or equivalent)
+     * for `<input>`, so we cannot observe a caret move that happens *within* a single
+     * focus session without any text being inserted/deleted. In that rare case a
+     * subsequent read of [selectionStart] returns the last synced value, not the
+     * live caret — this matches the baseline behavior of every mini-program text
+     * input wrapper shipped by Taro / wx-adapter / uni-app.
+     *
+     * A value of -1 means "never observed"; [selectionStart] then falls back to the
+     * end of [value], matching typical append-at-end typing.
      */
     private var cachedCursorIndex: Int = -1
 
@@ -231,7 +279,11 @@ class MiniInputElement(
                     // the new caret offset (post-edit); fall back to value length when the
                     // field is absent on some adapter runtimes so our GET_CURSOR_INDEX path
                     // still returns a sensible value.
-                    val rawDetail: dynamic = event.asDynamic().detail
+                    // NOTE: `event` is already `dynamic`; do NOT call `.asDynamic()` on it.
+                    // On a `dynamic` receiver Kotlin/JS emits a literal `.asDynamic()`
+                    // method invocation in some codegen paths, which blows up at runtime on
+                    // the WX mpEvent object with `i.asDynamic is not a function`.
+                    val rawDetail: dynamic = event.detail
                     val rawCursor: dynamic =
                         if (rawDetail != null) rawDetail.cursor else js("undefined")
                     cachedCursorIndex = if (jsTypeOf(rawCursor) == "number") {
@@ -267,7 +319,9 @@ class MiniInputElement(
                 }
                 val realMaxLength = { maxLength }
                 val bridge: EventHandler = { event ->
-                    val rawDetail: dynamic = event.asDynamic().detail
+                    // `event` is dynamic; direct field access avoids spurious `.asDynamic()`
+                    // method-call generation (see EVENT_INPUT note above).
+                    val rawDetail: dynamic = event.detail
                     val newValue: String = if (
                         rawDetail != null && jsTypeOf(rawDetail.value) == "string"
                     ) rawDetail.value.unsafeCast<String>() else ""
@@ -371,7 +425,9 @@ class MiniInputElement(
                 // Map DOM `keydown` listener onto WX <input> `confirm` event.
                 val confirmCallback: EventHandler = { event ->
                     // Sync latest text value from confirm event to this element.
-                    val detailValue = event.asDynamic().detail?.value
+                    // `event` is dynamic; direct field access avoids spurious `.asDynamic()`
+                    // method-call generation on the WX mpEvent.
+                    val detailValue: dynamic = event.detail?.value
                     if (jsTypeOf(detailValue) != "undefined" && detailValue != null) {
                         value = detailValue.unsafeCast<String>()
                     }
@@ -382,7 +438,7 @@ class MiniInputElement(
                     syntheticEvent.keyCode = ENTER_KEY_CODE
                     syntheticEvent.which = ENTER_KEY_CODE
                     syntheticEvent.type = EVENT_KEYDOWN
-                    syntheticEvent.target = event.asDynamic().target ?: this
+                    syntheticEvent.target = event.target ?: this
                     syntheticEvent.originalEvent = event
                     callback(syntheticEvent)
                 }
@@ -396,8 +452,21 @@ class MiniInputElement(
                 // the shared KRTextFieldView listener can consume mini-program and H5 events
                 // in a single code path. WX does not expose an animation curve, so we report
                 // 0 (linear) which keeps the core-side KeyboardParams well-formed.
+                //
+                // Platform note (WX real devices): unlike Android/iOS native, a single focus
+                // on real WX devices typically fires `bindkeyboardheightchange` 2–3 times —
+                // commonly a synchronous snapshot with `duration=0` at the final height,
+                // followed by one or more transitional frames (e.g. an intermediate height
+                // with `duration>0`) before the last frame reports the final height again.
+                // This is WX runtime behaviour and differs by device / IME. We intentionally
+                // forward every frame as-is (no debounce / coalescing) so the mini-program
+                // callback has the same "fires-per-native-event" semantics as every other
+                // WX event this class forwards; any smoothing is left to upper layers (the
+                // Kuikly business code can filter by `duration` / last-seen `height`).
                 val heightChangeCallback: EventHandler = { event ->
-                    val rawDetail: dynamic = event.asDynamic().detail
+                    // `event` is dynamic; direct field access avoids spurious `.asDynamic()`
+                    // method-call generation on the WX mpEvent.
+                    val rawDetail: dynamic = event.detail
                     val normalizedDetail: dynamic = js("({})")
                     normalizedDetail.height =
                         if (rawDetail != null && jsTypeOf(rawDetail.height) != "undefined") rawDetail.height else 0
@@ -407,7 +476,7 @@ class MiniInputElement(
                     val syntheticEvent: dynamic = js("({})")
                     syntheticEvent.type = EVENT_KEYBOARD_HEIGHT_CHANGE
                     syntheticEvent.detail = normalizedDetail
-                    syntheticEvent.target = event.asDynamic().target ?: this
+                    syntheticEvent.target = event.target ?: this
                     syntheticEvent.originalEvent = event
                     callback(syntheticEvent)
                 }
@@ -443,6 +512,13 @@ class MiniInputElement(
         private const val EVENT_KEYDOWN = "keydown"
         // WX native <input> return-key event.
         private const val EVENT_CONFIRM = "confirm"
+        // WX native <input> focus / blur events. We subscribe to them internally to keep
+        // `cachedCursorIndex` in sync with manual caret moves (their detail carries the
+        // latest `cursor` offset). Do NOT intercept these for any other purpose — user
+        // handlers registered via addEventListener("focus"/"blur", ...) must still
+        // propagate through `super.addEventListener` unchanged.
+        private const val EVENT_FOCUS = "focus"
+        private const val EVENT_BLUR = "blur"
         // Unified DOM-level keyboard-height-change event that both H5 (dispatched by
         // KRTextFieldView via VisualViewport) and mini-program (forwarded from
         // WX native `bindkeyboardheightchange`) agree on.
