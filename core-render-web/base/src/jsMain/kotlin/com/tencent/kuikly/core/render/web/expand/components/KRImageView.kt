@@ -31,28 +31,36 @@ open class KRImageView(
         // Set load success callback, bind only once
         imageElement.addEventListener("load", {
             imageElement.style.display = "block"
-            // When loading succeeds, callback the actual image source content
-            loadSuccessCallback?.invoke(
-                mapOf(
-                    SRC to imageElement.src
+            // Skip the default transparent placeholder's load event so it
+            // won't trigger loadSuccess (which would incorrectly clear the
+            // user-provided placeholder background).
+            if (imageElement.src != DEFAULT_SRC) {
+                // When loading succeeds, callback the actual image source content
+                loadSuccessCallback?.invoke(
+                    mapOf(
+                        SRC to imageElement.src
+                    )
                 )
-            )
-            // When loading succeeds, callback the image dimension data
-            loadResolutionCallback?.invoke(
-                mapOf(
-                    IMAGE_WIDTH to imageElement.naturalWidth,
-                    IMAGE_HEIGHT to imageElement.naturalHeight
+                // When loading succeeds, callback the image dimension data
+                loadResolutionCallback?.invoke(
+                    mapOf(
+                        IMAGE_WIDTH to imageElement.naturalWidth,
+                        IMAGE_HEIGHT to imageElement.naturalHeight
+                    )
                 )
-            )
+            }
         })
         // Hide itself when image loading fails
         imageElement.addEventListener("error", {
             imageElement.style.display = "none"
-            loadFailureCallback?.invoke(mapOf(
-                SRC to imageElement.src,
-                // web can not get error code, return -10001
-                ERROR_CODE to ERROR_UNKNOWN
-            ))
+            // Ignore errors from the built-in default transparent placeholder
+            if (imageElement.src != DEFAULT_SRC) {
+                loadFailureCallback?.invoke(mapOf(
+                    SRC to imageElement.src,
+                    // web can not get error code, return -10001
+                    ERROR_CODE to ERROR_UNKNOWN
+                ))
+            }
         })
     }.unsafeCast<HTMLImageElement>()
 
@@ -66,6 +74,7 @@ open class KRImageView(
 
     private var tintColorValue = ""
     private var rootWidth = 0.0
+    private var resizeMode = "contain"
     private var loadSuccessCallback: KuiklyRenderCallback? = null
     private var loadResolutionCallback: KuiklyRenderCallback? = null
     private var loadFailureCallback: KuiklyRenderCallback? = null
@@ -130,6 +139,14 @@ open class KRImageView(
                 true
             }
 
+            PLACEHOLDER -> {
+                // Set placeholder image, displayed on the outer div as background
+                // until the real image is loaded successfully, then the core layer
+                // will issue an empty PLACEHOLDER to clear it.
+                setPlaceholder(propValue.unsafeCast<String>())
+                true
+            }
+
             else -> {
                 // Other unified handling
                 super.setProp(propKey, propValue)
@@ -184,9 +201,64 @@ open class KRImageView(
      */
     private fun setResize(propValue: Any) {
         // Adapt image stretch mode, no stretch in DOM, set to fill
-        image.style.objectFit = when (propValue.unsafeCast<String>()) {
+        val resizeValue = when (propValue.unsafeCast<String>()) {
             "stretch" -> "fill"
             else -> propValue.unsafeCast<String>()
+        }
+        image.style.objectFit = resizeValue
+        resizeMode = resizeValue
+        // Keep placeholder background-size consistent with the main image's fit
+        applyPlaceholderResize()
+    }
+
+    /**
+     * Set placeholder image. When [placeholder] is empty, the placeholder layer
+     * is cleared (triggered by core layer after main image load success).
+     */
+    private fun setPlaceholder(placeholder: String) {
+        if (placeholder.isEmpty()) {
+            // Clear placeholder background
+            div.style.backgroundImage = ""
+            div.style.backgroundRepeat = ""
+            div.style.backgroundPosition = ""
+            div.style.backgroundSize = ""
+            return
+        }
+        val resolvedSrc = resolvePlaceholderSrc(placeholder)
+        if (resolvedSrc.isEmpty()) {
+            return
+        }
+        div.style.backgroundImage = "url(\"$resolvedSrc\")"
+        div.style.backgroundRepeat = "no-repeat"
+        div.style.backgroundPosition = "center center"
+        applyPlaceholderResize()
+    }
+
+    /**
+     * Resolve placeholder src, supports http, base64 (memory cache key),
+     * assets:// and file:// prefixes.
+     */
+    private fun resolvePlaceholderSrc(src: String): String {
+        return when {
+            isAssetsSrc(src) -> KuiklyProcessor.imageProcessor.getImageAssetsSource(src)
+            isBase64Src(src) -> getBase64Image(src) ?: ""
+            else -> src
+        }
+    }
+
+    /**
+     * Apply the current resize mode to the placeholder background-size,
+     * so the placeholder has the same visual fit as the main image.
+     */
+    private fun applyPlaceholderResize() {
+        if (div.style.backgroundImage.isEmpty()) {
+            return
+        }
+        div.style.backgroundSize = when (resizeMode) {
+            "contain" -> "contain"
+            "cover" -> "cover"
+            "fill" -> "100% 100%"
+            else -> "contain"
         }
     }
 
@@ -226,6 +298,9 @@ open class KRImageView(
 
         // Blur radius
         private const val BLUR_RADIUS = "blurRadius"
+
+        // Placeholder image source
+        private const val PLACEHOLDER = "placeholder"
 
         // Default blank placeholder image
         private const val DEFAULT_SRC =
