@@ -153,7 +153,7 @@ internal class TextAreaDemoPage : BasePager() {
                             // underlying <textarea>; on iOS/Android it maps to the native
                             // text-area tint. Picking RED makes the caret stand out
                             // against the WHITE background.
-                            tintColor(Color.RED)
+                            tintColor(Color.YELLOW)
                         }
 
                         event {
