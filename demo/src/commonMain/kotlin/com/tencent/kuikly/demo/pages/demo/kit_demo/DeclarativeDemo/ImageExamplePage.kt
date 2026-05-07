@@ -21,6 +21,7 @@ import com.tencent.kuikly.core.base.Color
 import com.tencent.kuikly.core.base.ViewBuilder
 import com.tencent.kuikly.core.views.Image
 import com.tencent.kuikly.core.views.List
+import com.tencent.kuikly.core.views.Text
 import com.tencent.kuikly.core.views.View
 import com.tencent.kuikly.demo.pages.base.BasePager
 import com.tencent.kuikly.demo.pages.demo.base.NavBar
@@ -83,7 +84,20 @@ internal class ImageExamplePage: BasePager() {
                         blurRadius(5f)
                     }
                 }
+                // Note: On MiniApp, tintColor is implemented via CSS drop-shadow.
+                // The WeChat DevTools simulator does not render this filter correctly
+                // (the whole image appears as a solid color block), but it works as
+                // expected on real devices (iOS / Android). Please verify on a real
+                // device when testing this example.
                 ViewExampleSectionHeader { attr { title = "Image { attr { tintColor(Color.RED) } }" } }
+                Text {
+                    attr {
+                        margin(all = 8f)
+                        color(Color.RED)
+                        fontSize(12f)
+                        text("Note: On MiniApp, please test on a real device (WeChat DevTools does not render drop-shadow correctly).")
+                    }
+                }
                 Image {
                     attr {
                         alignSelfCenter()
