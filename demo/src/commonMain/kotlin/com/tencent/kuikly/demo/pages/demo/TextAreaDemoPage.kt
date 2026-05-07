@@ -147,16 +147,13 @@ internal class TextAreaDemoPage : BasePager() {
 
                             color(Color.BLACK)
                             autofocus(true)
-                            backgroundColor(Color.WHITE)
+                            backgroundColor(Color.RED)
                             // Drive the caret/cursor color. On H5 / mini-program this is
                             // translated to the CSS `caret-color` declaration on the
                             // underlying <textarea>; on iOS/Android it maps to the native
                             // text-area tint. Picking RED makes the caret stand out
                             // against the WHITE background.
                             tintColor(Color.RED)
-
-                            transform(Translate(0f, -ctx.keyboardHeight / 200f))
-                            animation(ctx.keyboardAnimation, ctx.keyboardHeight)
                         }
 
                         event {
