@@ -73,7 +73,9 @@ open class KRImageView(
     }.unsafeCast<HTMLDivElement>()
 
     private var tintColorValue = ""
-    private var rootWidth = 0.0
+    // Current frame height in px, used as the Y-axis offset for tint color
+    // implementations that rely on transform/drop-shadow (e.g. miniapp).
+    private var frameHeight = 0.0
     private var resizeMode = "contain"
     private var loadSuccessCallback: KuiklyRenderCallback? = null
     private var loadResolutionCallback: KuiklyRenderCallback? = null
@@ -122,7 +124,7 @@ open class KRImageView(
 
             KRCssConst.FRAME -> {
                 val frame = propValue.unsafeCast<Frame>()
-                rootWidth = frame.width
+                frameHeight = frame.height
                 ele.setFrame(frame, ele.style)
                 tintColorIfNeed()
                 true
@@ -158,7 +160,7 @@ open class KRImageView(
      * Apply tint color
      */
     private fun tintColorIfNeed() {
-        KuiklyProcessor.imageProcessor.applyTintColor(image, tintColorValue, rootWidth)
+        KuiklyProcessor.imageProcessor.applyTintColor(image, tintColorValue, frameHeight)
     }
 
     /**

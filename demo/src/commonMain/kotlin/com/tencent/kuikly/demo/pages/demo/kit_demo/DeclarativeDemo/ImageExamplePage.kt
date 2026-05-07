@@ -71,6 +71,30 @@ internal class ImageExamplePage: BasePager() {
                         resizeStretch()
                     }
                 }
+                ViewExampleSectionHeader { attr { title = "Image { attr { blurRadius(5f) } }" } }
+                Image {
+                    attr {
+                        alignSelfCenter()
+                        margin(all = 8f)
+                        backgroundColor(0xFFE5E5E5)
+                        size(width = 240f, height = 180f)
+                        src("https://picsum.photos/200/300")
+                        resizeCover()
+                        blurRadius(5f)
+                    }
+                }
+                ViewExampleSectionHeader { attr { title = "Image { attr { tintColor(Color.RED) } }" } }
+                Image {
+                    attr {
+                        alignSelfCenter()
+                        margin(all = 8f)
+                        backgroundColor(0xFFE5E5E5)
+                        size(width = 180f, height = 120f)
+                        src("https://raw.githubusercontent.com/Tencent-TDS/KuiklyUI/refs/heads/main/demo/src/commonMain/assets/ChatDemo/kuikly_logo.png")
+                        resizeContain()
+                        tintColor(Color.RED)
+                    }
+                }
                 View {
                     attr {
                         height(3000f)
