@@ -6,6 +6,7 @@ import com.tencent.kuikly.core.render.web.export.IKuiklyRenderViewExport
 import com.tencent.kuikly.core.render.web.ktx.Frame
 import com.tencent.kuikly.core.render.web.const.KRCssConst
 import com.tencent.kuikly.core.render.web.ktx.KuiklyRenderCallback
+import com.tencent.kuikly.core.render.web.ktx.convertGradientStringToCssMask
 import com.tencent.kuikly.core.render.web.ktx.kuiklyDocument
 import com.tencent.kuikly.core.render.web.ktx.setFrame
 import com.tencent.kuikly.core.render.web.ktx.toPxF
@@ -146,6 +147,19 @@ open class KRImageView(
                 // until the real image is loaded successfully, then the core layer
                 // will issue an empty PLACEHOLDER to clear it.
                 setPlaceholder(propValue.unsafeCast<String>())
+                true
+            }
+
+            KRCssConst.MASK_LINEAR_GRADIENT -> {
+                // Apply mask on the inner <img> so the gradient actually clips the
+                // image pixels. The outer div is transparent and would produce no
+                // visible masking effect.
+                val raw = propValue.unsafeCast<String>()
+                image.style.asDynamic().webkitMask = if (raw.isEmpty()) {
+                    ""
+                } else {
+                    convertGradientStringToCssMask(raw)
+                }
                 true
             }
 
