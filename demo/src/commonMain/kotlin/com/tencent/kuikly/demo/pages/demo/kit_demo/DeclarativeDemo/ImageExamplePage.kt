@@ -18,6 +18,8 @@ package com.tencent.kuikly.demo.pages.demo.kit_demo.DeclarativeDemo
 import com.tencent.kuikly.core.annotations.Page
 import com.tencent.kuikly.core.base.BoxShadow
 import com.tencent.kuikly.core.base.Color
+import com.tencent.kuikly.core.base.ColorStop
+import com.tencent.kuikly.core.base.Direction
 import com.tencent.kuikly.core.base.ViewBuilder
 import com.tencent.kuikly.core.views.Image
 import com.tencent.kuikly.core.views.List
@@ -107,6 +109,55 @@ internal class ImageExamplePage: BasePager() {
                         src("https://raw.githubusercontent.com/Tencent-TDS/KuiklyUI/refs/heads/main/demo/src/commonMain/assets/ChatDemo/kuikly_logo.png")
                         resizeContain()
                         tintColor(Color.RED)
+                    }
+                }
+                ViewExampleSectionHeader {
+                    attr { title = "Image { attr { maskLinearGradient(...) } }" }
+                }
+                // Top -> Bottom fade out (white opaque -> white transparent)
+                Image {
+                    attr {
+                        alignSelfCenter()
+                        margin(all = 8f)
+                        size(width = 240f, height = 180f)
+                        src("https://picsum.photos/200/300?mask=1")
+                        resizeCover()
+                        maskLinearGradient(
+                            Direction.TO_BOTTOM,
+                            ColorStop(Color.WHITE, 0f),
+                            ColorStop(Color(red255 = 255, green255 = 255, blue255 = 255, 0f), 1f)
+                        )
+                    }
+                }
+                // Left -> Right fade out
+                Image {
+                    attr {
+                        alignSelfCenter()
+                        margin(all = 8f)
+                        size(width = 240f, height = 180f)
+                        src("https://picsum.photos/200/300?mask=2")
+                        resizeCover()
+                        maskLinearGradient(
+                            Direction.TO_RIGHT,
+                            ColorStop(Color.WHITE, 0f),
+                            ColorStop(Color(red255 = 255, green255 = 255, blue255 = 255, 0f), 1f)
+                        )
+                    }
+                }
+                // Two-end fade (transparent -> opaque -> transparent)
+                Image {
+                    attr {
+                        alignSelfCenter()
+                        margin(all = 8f)
+                        size(width = 240f, height = 180f)
+                        src("https://picsum.photos/200/300?mask=3")
+                        resizeCover()
+                        maskLinearGradient(
+                            Direction.TO_BOTTOM,
+                            ColorStop(Color(red255 = 255, green255 = 255, blue255 = 255, 0f), 0f),
+                            ColorStop(Color.WHITE, 0.5f),
+                            ColorStop(Color(red255 = 255, green255 = 255, blue255 = 255, 0f), 1f)
+                        )
                     }
                 }
                 View {
