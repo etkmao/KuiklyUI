@@ -111,6 +111,52 @@ internal class ImageExamplePage: BasePager() {
                         tintColor(Color.RED)
                     }
                 }
+                // capInsets defines a 9-patch stretch region: the 4 corners keep
+                // their original size, the 4 edges are stretched along one axis,
+                // and the center is stretched along both axes. Useful for bubbles
+                // / buttons with rounded corners that should not distort when
+                // resized. On H5/MiniApp it is implemented via CSS `border-image`.
+                ViewExampleSectionHeader {
+                    attr { title = "Image { attr { capInsets(top, left, bottom, right) } }" }
+                }
+                // Original bubble image, stretched without capInsets (corners distorted)
+                Text {
+                    attr {
+                        margin(left = 8f, right = 8f, top = 4f)
+                        color(Color.GRAY)
+                        fontSize(12f)
+                        text("Without capInsets: resizeStretch scales the whole image, the rounded corners are distorted.")
+                    }
+                }
+                Image {
+                    attr {
+                        alignSelfCenter()
+                        margin(all = 8f)
+                        size(width = 300f, height = 80f)
+                        src("https://vfiles.gtimg.cn/wuji_dashboard/xy/componenthub/gjCqDSbr.png")
+                        // resizeStretch()
+                    }
+                }
+                // Same image with capInsets: the 4 corners keep their size and
+                // only the center is stretched, preserving the rounded borders.
+                Text {
+                    attr {
+                        margin(left = 8f, right = 8f, top = 4f)
+                        color(Color.GRAY)
+                        fontSize(12f)
+                        text("With capInsets(12, 25, 12, 12): 9-patch stretch. The 4 corners keep their size, edges stretch along one axis, center stretches along both. Rounded borders are preserved.")
+                    }
+                }
+                Image {
+                    attr {
+                        alignSelfCenter()
+                        margin(all = 8f)
+                        size(width = 300f, height = 80f)
+                        src("https://vfiles.gtimg.cn/wuji_dashboard/xy/componenthub/gjCqDSbr.png")
+                        resizeStretch()
+                        capInsets(12f, 25f, 12f, 12f)
+                    }
+                }
                 ViewExampleSectionHeader {
                     attr { title = "Image { attr { maskLinearGradient(...) } }" }
                 }

@@ -78,6 +78,15 @@ open class KRImageView(
     // implementations that rely on transform/drop-shadow (e.g. miniapp).
     private var frameHeight = 0.0
     private var resizeMode = "contain"
+    // Current image src that has been resolved to a real URL (http/base64),
+    // used by capInsets when building the border-image CSS on the outer div.
+    private var currentResolvedSrc = ""
+    // capInsets edges in CSS px (top, right, bottom, left). When all four
+    // are zero, capInsets is disabled and the component renders normally.
+    private var capInsetsTop = 0f
+    private var capInsetsRight = 0f
+    private var capInsetsBottom = 0f
+    private var capInsetsLeft = 0f
     private var loadSuccessCallback: KuiklyRenderCallback? = null
     private var loadResolutionCallback: KuiklyRenderCallback? = null
     private var loadFailureCallback: KuiklyRenderCallback? = null
@@ -96,6 +105,15 @@ open class KRImageView(
             RESIZE -> {
                 // Adapt image stretch mode, no stretch in dom, set to fill
                 setResize(propValue)
+                // border-image-repeat follows the resize mode
+                applyCapInsetsIfNeeded()
+                true
+            }
+
+            CAP_INSETS -> {
+                // Parse "top left bottom right" (unit: CSS px) from core layer.
+                parseCapInsets(propValue.unsafeCast<String>())
+                applyCapInsetsIfNeeded()
                 true
             }
 
@@ -178,6 +196,97 @@ open class KRImageView(
     }
 
     /**
+     * Parse capInsets value string "top left bottom right" (space separated).
+     * Empty / malformed string resets capInsets to zero (disabled).
+     */
+    private fun parseCapInsets(raw: String) {
+        if (raw.isEmpty()) {
+            capInsetsTop = 0f
+            capInsetsRight = 0f
+            capInsetsBottom = 0f
+            capInsetsLeft = 0f
+            return
+        }
+        val parts = raw.split(" ")
+        if (parts.size < 4) {
+            capInsetsTop = 0f
+            capInsetsRight = 0f
+            capInsetsBottom = 0f
+            capInsetsLeft = 0f
+            return
+        }
+        capInsetsTop = parts[0].toFloatOrNull() ?: 0f
+        capInsetsLeft = parts[1].toFloatOrNull() ?: 0f
+        capInsetsBottom = parts[2].toFloatOrNull() ?: 0f
+        capInsetsRight = parts[3].toFloatOrNull() ?: 0f
+    }
+
+    /**
+     * Whether capInsets is currently enabled (at least one edge > 0).
+     */
+    private fun isCapInsetsEnabled(): Boolean =
+        capInsetsTop > 0f || capInsetsRight > 0f ||
+                capInsetsBottom > 0f || capInsetsLeft > 0f
+
+    /**
+     * Apply capInsets as CSS border-image on the outer div. When enabled, the
+     * inner <img> is hidden and the full visual is produced by border-image;
+     * when disabled, the inner <img> is restored.
+     *
+     * Note: border-image-slice uses the raw image pixel size (not CSS px).
+     * The core layer passes the insets in CSS px; we forward them as unitless
+     * numbers which the browser interprets as image pixels. This matches the
+     * 9-patch semantics used on native (iOS/Android) platforms where the
+     * insets describe pixel offsets on the source image.
+     */
+    private fun applyCapInsetsIfNeeded() {
+        val style = div.style
+        if (!isCapInsetsEnabled() || currentResolvedSrc.isEmpty()) {
+            // Disable / clear: restore the inner <img> and drop border-image.
+            style.asDynamic().borderImageSource = ""
+            style.asDynamic().borderImageSlice = ""
+            style.asDynamic().borderImageWidth = ""
+            style.asDynamic().borderImageRepeat = ""
+            style.borderStyle = ""
+            style.borderColor = ""
+            style.borderWidth = ""
+            style.boxSizing = ""
+            image.style.display = "block"
+            return
+        }
+        // Enable: hide the original <img>, draw the 9-patch via border-image.
+        image.style.display = "none"
+        // Use border-box so the outer frame includes the border area.
+        style.boxSizing = "border-box"
+        style.borderStyle = "solid"
+        style.borderColor = "transparent"
+        style.borderTopWidth = capInsetsTop.toPxF()
+        style.borderRightWidth = capInsetsRight.toPxF()
+        style.borderBottomWidth = capInsetsBottom.toPxF()
+        style.borderLeftWidth = capInsetsLeft.toPxF()
+        style.asDynamic().borderImageSource = "url(\"$currentResolvedSrc\")"
+        // "fill" keeps the middle region visible and stretched.
+        style.asDynamic().borderImageSlice =
+            "${capInsetsTop} ${capInsetsRight} ${capInsetsBottom} ${capInsetsLeft} fill"
+        style.asDynamic().borderImageWidth =
+            "${capInsetsTop.toPxF()} ${capInsetsRight.toPxF()} " +
+                    "${capInsetsBottom.toPxF()} ${capInsetsLeft.toPxF()}"
+        style.asDynamic().borderImageRepeat = capInsetsRepeatForResize()
+    }
+
+    /**
+     * Map the current resize mode to the most appropriate border-image-repeat
+     * value. "stretch" maps to CSS stretch, "cover" uses round (preserves
+     * integer tiles), other modes fall back to stretch.
+     */
+    private fun capInsetsRepeatForResize(): String = when (resizeMode) {
+        "fill" -> "stretch" // stretch in core -> "fill" in object-fit
+        "cover" -> "round"
+        "contain" -> "stretch"
+        else -> "stretch"
+    }
+
+    /**
      * Check if the set image src is in base64 format
      */
     private fun isBase64Src(src: String): Boolean = src.startsWith(BASE64_IMAGE_PREFIX)
@@ -209,6 +318,9 @@ open class KRImageView(
                 // Otherwise directly set image link
                 image.src = src
             }
+            currentResolvedSrc = image.src
+            // If capInsets was already set before src, refresh the border-image.
+            applyCapInsetsIfNeeded()
         }
     }
 
@@ -311,6 +423,7 @@ open class KRImageView(
         private const val LOAD_RESOLUTION = "loadResolution"
         private const val TINT_COLOR = "tintColor"
         private const val PROP_DOT_NINE_IMAGE = "dotNineImage"
+        private const val CAP_INSETS = "capInsets"
 
         // Blur radius
         private const val BLUR_RADIUS = "blurRadius"

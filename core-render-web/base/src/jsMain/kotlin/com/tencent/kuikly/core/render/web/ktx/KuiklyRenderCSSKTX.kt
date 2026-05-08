@@ -200,7 +200,13 @@ var Element.animationCompletionBlock: KuiklyRenderCallback?
  */
 private fun Element.checkAndUpdatePositionForH5(frame: Frame, style: CSSStyleDeclaration) {
     // update style for h5
-    if (style.borderWidth.endsWith(KRStyleConst.PX_SUFFIX)) {
+    // Note: when the four border widths are not all equal, browsers serialize
+    // `style.borderWidth` as a shorthand with multiple values (e.g.
+    // "12px 12px 12px 25px"), which must not be passed to pxToDouble(). In that
+    // case we skip the per-side child-offset adjustment (only used by the
+    // uniform-border layout path). The per-edge used below (borderTopWidth /
+    // borderLeftWidth) is always a single-value string and safe to parse.
+    if (isSingleValuePx(style.borderWidth)) {
         val borderWidth = style.borderWidth.pxToDouble()
         Promise.resolve(null).then {
             // if element has border, then element is border-box, then adjust the children's offset
@@ -227,7 +233,7 @@ private fun Element.checkAndUpdatePositionForH5(frame: Frame, style: CSSStyleDec
     // handle offset for dynamic child
     parentElement.unsafeCast<HTMLElement?>()?.let { parent ->
         val dynamicChild = this.asDynamic()
-        if (parent.style.borderWidth.endsWith(KRStyleConst.PX_SUFFIX) && jsTypeOf(dynamicChild.isAdujustedOffset) == KRJsTypeConst.UNDEFINED) {
+        if (isSingleValuePx(parent.style.borderWidth) && jsTypeOf(dynamicChild.isAdujustedOffset) == KRJsTypeConst.UNDEFINED) {
             // adjust offset for non adjusted child
             val borderWidth = parent.style.borderWidth.pxToDouble()
             style.left = (frame.x - borderWidth).toPxF()
@@ -235,6 +241,15 @@ private fun Element.checkAndUpdatePositionForH5(frame: Frame, style: CSSStyleDec
         }
     }
 }
+
+/**
+ * Whether the given CSS length string is a single-value px expression
+ * (e.g. "12px"). Shorthand multi-value strings like "12px 12px 12px 25px"
+ * are not safely parseable as a single Double and should be handled
+ * per-side by the caller.
+ */
+private fun isSingleValuePx(value: String): Boolean =
+    value.endsWith(KRStyleConst.PX_SUFFIX) && !value.contains(' ')
 
 /**
  * Set element frame
