@@ -134,7 +134,7 @@ internal class ImageExamplePage: BasePager() {
                         margin(all = 8f)
                         size(width = 300f, height = 80f)
                         src("https://vfiles.gtimg.cn/wuji_dashboard/xy/componenthub/gjCqDSbr.png")
-                        // resizeStretch()
+                        resizeStretch()
                     }
                 }
                 // Same image with capInsets: the 4 corners keep their size and
