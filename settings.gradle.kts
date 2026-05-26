@@ -16,7 +16,7 @@ val buildFileName = "build.2.1.21.gradle.kts"
 
 include(":androidApp")
 include(":demo")
-
+include(":demo_sub")
 include(":core-annotations")
 project(":core-annotations").buildFileName = buildFileName
 

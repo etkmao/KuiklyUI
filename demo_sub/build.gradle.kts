@@ -29,7 +29,7 @@ kotlin {
     }
 
     js(IR) {
-        moduleName = Output.name
+        moduleName = "nativevue2-sub"
         browser {
             webpackTask {
                 outputFileName = "${moduleName}.js" // 最后输出的名字
@@ -62,18 +62,9 @@ kotlin {
             implementation(project(":compose"))
             implementation(project(":core-annotations"))
 //            compileOnly(project(":core-annotations"))
-            // :core-wx is OPTIONAL. Depend on it here only because the demo
-            // showcases WeChat MiniProgram components / APIs. Apps that do not
-            // need WX capabilities simply omit this dependency and pay zero
-            // cost (no classes leaked into android/iOS artifacts).
-            // Declared in commonMain so cross-platform pages can conditionally
-            // use `WXButton {}` / `registerWXModules()` behind an
-            // `is_miniprogram` runtime check.
-            implementation(project(":core-wx"))
             // Chat Demo 相关依赖
-            implementation("com.tencent.kuiklybase:markdown:0.4.0")
+            // implementation("com.tencent.kuiklyextendsion:markdown:0.4.0")
             implementation("io.ktor:ktor-client-core:2.3.10")
-            implementation(project(":demo_sub"))
         }
     }
 
@@ -148,18 +139,14 @@ kotlin {
     }
 }
 
-fun getPageNameList(): String {
-    return project.properties["pageNameList"] as? String ?: ""
-}
-
 ksp {
+    arg("enablePreview", "true")
     arg("pageName", getPageName())
     arg("pageNameList", getPageNameList())
     arg(Output.KEY_PACK_LOCAL_JS_BUNDLE, packLocalJsBundle())
-    arg("moduleId", "main")                // 模块Id
-    arg("isMainModule", "true")              // 是否是主模块
-    arg("subModules", "demo_sub")       // 模块
-    arg("enableMultiModule", "true")          // 启用多模块
+    arg("moduleId", "demo_sub")                // 模块Id
+    arg("isMainModule", "false")              // 是否是主模块
+    arg("enableMultiModule","true")          // 启用多模块
 }
 
 dependencies {
@@ -177,7 +164,7 @@ dependencies {
 android {
     compileSdk = 34
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
-    namespace = "com.tencent.kuikly.demo"
+    namespace = "com.tencent.kuikly.demo_sub"
     defaultConfig {
         minSdk = 21
         targetSdk = 30
@@ -204,6 +191,10 @@ fun getPageName(): String {
     return project.properties["pageName"] as? String ?: ""
 }
 
+fun getPageNameList(): String {
+    return project.properties["pageNameList"] as? String ?: ""
+}
+
 fun packLocalJsBundle(): String {
     return (project.properties[Output.KEY_PACK_LOCAL_JS_BUNDLE] as? String) ?: ""
 }
@@ -220,18 +211,12 @@ fun getLinkerArgs(): List<String> {
     )
 }
 
-// Compose 编译器稳定性报告（按需开启，用于验证类的稳定性推断，会增加编译耗时）
-// composeCompiler {
-//     reportsDestination.set(layout.buildDirectory.dir("compose_compiler"))
-//     metricsDestination.set(layout.buildDirectory.dir("compose_compiler"))
-// }
-
 // Kuikly 插件配置
 kuikly {
     // JS 产物配置
     js {
         // 构建产物名，与 KMM 插件 webpackTask#outputFileName 一致
-        outputName("nativevue2")
+        outputName("nativevue2-sub")
         // 可选：分包构建时的页面列表，如果为空则构建全部页面
         // addSplitPage("route","home")
     }
