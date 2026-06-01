@@ -9,6 +9,7 @@
       "pages/ListExamplePage/index", 
       "pages/WaterfallListDemoPage/index", 
       "pages/WallfallIssueTest/index", 
+      "pages/WaterfallAsyncIssueTest/index", 
       "pages/InputViewDemoPage/index",
       "pages/SliderPageViewDemoPage/index", 
       "pages/HoverExamplePage/index", 
