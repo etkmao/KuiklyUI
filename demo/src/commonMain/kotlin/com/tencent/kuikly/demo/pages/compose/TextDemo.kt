@@ -463,6 +463,14 @@ class TextDemo : ComposeContainer() {
                 softWrap = false,
                 modifier = Modifier.background(Color.Yellow).width(200.dp),
             )
+
+            // 6. fontSize和lineHeight都设置成18sp
+            Text(
+                "fontSize和lineHeight都设置成18sp",
+                fontSize = 18.sp,
+                lineHeight = 18.sp,
+                modifier = Modifier.background(Color.LightGray).height(18.dp),
+            )
         }
     }
 

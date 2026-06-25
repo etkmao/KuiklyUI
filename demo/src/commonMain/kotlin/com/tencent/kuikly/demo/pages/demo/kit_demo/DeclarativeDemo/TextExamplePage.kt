@@ -123,6 +123,38 @@ internal fun ViewContainer<*, *>.TextExampleFontSize(init: TextExampleFontSize.(
     addChild(TextExampleFontSize(), init)
 }
 
+internal class TextExampleFontSizeAndLineHeight : ComposeView<ComposeAttr, ComposeEvent>() {
+    override fun body(): ViewBuilder {
+        return {
+            attr {
+                flexDirectionColumn()
+                justifyContentFlexStart()
+                padding(all = 16f)
+            }
+            Text {
+                attr {
+                    fontSize(18f)
+                    lineHeight(18f)
+                    height(18f)
+                    text("attr { fontSize(18); lineHeight(18) }")
+                }
+            }
+        }
+    }
+
+    override fun createAttr(): ComposeAttr {
+        return ComposeAttr()
+    }
+
+    override fun createEvent(): ComposeEvent {
+        return ComposeEvent()
+    }
+}
+
+internal fun ViewContainer<*, *>.TextExampleFontSizeAndLineHeight(init: TextExampleFontSizeAndLineHeight.() -> Unit) {
+    addChild(TextExampleFontSizeAndLineHeight(), init)
+}
+
 internal class TextExampleFontWeight: ComposeView<ComposeAttr, ComposeEvent>() {
     override fun body(): ViewBuilder {
         return {
@@ -1467,6 +1499,8 @@ internal class TextExamplePage: BasePager() {
                 attr { flex(1f) }
                 ViewExampleSectionHeader { attr { title = "FontSize" } }
                 TextExampleFontSize {  }
+                ViewExampleSectionHeader { attr { title = "FontSize & LineHeight" } }
+                TextExampleFontSizeAndLineHeight {  }
                 ViewExampleSectionHeader { attr { title = "FontWeight" } }
                 TextExampleFontWeight {  }
                 ViewExampleSectionHeader { attr { title = "TextColor" } }
