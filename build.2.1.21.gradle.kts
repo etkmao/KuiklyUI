@@ -33,11 +33,14 @@ allprojects {
             url = uri("https://mirrors.tencent.com/repository/maven-tencent/")
         }
     }
-    configurations.all {
-        resolutionStrategy.dependencySubstitution {
-            substitute(module("${MavenConfig.GROUP}:compose")).using(project(":compose"))
-        }
-    }
+    // === 方案B：h5App-js 走版本依赖时，禁用 compose 的 project 替换 ===
+    // 原逻辑会把 Maven 的 com.tencent.kuikly-open:compose 替换回 project(":compose")，
+    // 现在 compose 已从 settings 中移除，且需要走 Maven，故整体注释掉。
+    // configurations.all {
+    //     resolutionStrategy.dependencySubstitution {
+    //         substitute(module("${MavenConfig.GROUP}:compose")).using(project(":compose"))
+    //     }
+    // }
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
         jvmTargetValidationMode.set(org.jetbrains.kotlin.gradle.dsl.jvm.JvmTargetValidationMode.WARNING)
     }

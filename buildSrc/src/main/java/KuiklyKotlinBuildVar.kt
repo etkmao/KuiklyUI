@@ -63,8 +63,9 @@ object BuildPlugin {
         "com.android.tools.build:gradle:${Version.getAGPVersion()}"
     }
 
+    // 升级到支持 JS 分包（packEntryJSBundle）的版本，与 core-ksp 使用同一版本号
     val kuikly by lazy {
-        "com.tencent.kuikly-open:core-gradle-plugin:2.14.1-2.0.21"
+        "com.tencent.kuikly-open:core-gradle-plugin:${Version.getKuiklyVersion()}"
     }
 }
 
@@ -143,7 +144,8 @@ object Version {
     const val MATERIAL_VERSION = "1.4.0"
     const val SNAPSHOT_SUFFIX = "-SNAPSHOT"
 
-    private const val DEFAULT_KUIKLY_VERSION = "2.0.0"
+    // 方案B：将 Kuikly 内部模块改为 Maven 版本依赖，统一使用支持 JS 分包（packEntryJSBundle）的版本号
+    private const val DEFAULT_KUIKLY_VERSION = "2.20.0-2.0.21"
     private const val DEFAULT_KOTLIN_VERSION = "2.1.21"
     private const val DEFAULT_AGP_VERSION = "7.4.2"
 
@@ -164,12 +166,13 @@ object Version {
             return kuiklyVersion
         }
         kuiklyVersion = DEFAULT_KUIKLY_VERSION
-        // 流水席构建，版本号增加 snapshot
+        // 流水线构建：拼接 build 号并加 -SNAPSHOT；本地场景直接返回默认正式版号
         val buildNum = System.getenv(KEY_CI_BUILD_NUM)
         if (buildNum != null && buildNum.isNotEmpty()) {
             kuiklyVersion += ".$buildNum"
+            return "$kuiklyVersion$SNAPSHOT_SUFFIX"
         }
-        return "$kuiklyVersion$SNAPSHOT_SUFFIX"
+        return kuiklyVersion
     }
 
     /**

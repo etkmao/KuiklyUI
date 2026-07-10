@@ -58,8 +58,9 @@ kotlin {
     sourceSets {
         val jsMain by getting {
             dependencies {
-                // Import js standard library
-                api(project(":core-render-web:base"))
+                // === 方案B：core-render-web:base 改为 Maven 版本依赖（不搬迁 base 源码） ===
+                // 原：api(project(":core-render-web:base"))
+                api("com.tencent.kuikly-open.core-render-web:base:${Version.getKuiklyVersion()}")
             }
         }
     }

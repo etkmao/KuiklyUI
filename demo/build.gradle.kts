@@ -58,9 +58,13 @@ kotlin {
     // sourceSet
     val commonMain by sourceSets.getting {
         dependencies {
-            implementation(project(":core"))
-            implementation(project(":compose"))
-            implementation(project(":core-annotations"))
+            // === 方案B：Kuikly 内部模块改为版本依赖（Maven），不再引用源码 project ===
+            // 原：implementation(project(":core"))
+            implementation("com.tencent.kuikly-open:core:${Version.getKuiklyVersion()}")
+            // 原：implementation(project(":compose"))
+            implementation("com.tencent.kuikly-open:compose:${Version.getKuiklyVersion()}")
+            // 原：implementation(project(":core-annotations"))
+            implementation("com.tencent.kuikly-open:core-annotations:${Version.getKuiklyVersion()}")
 //            compileOnly(project(":core-annotations"))
             // :core-wx is OPTIONAL. Depend on it here only because the demo
             // showcases WeChat MiniProgram components / APIs. Apps that do not
@@ -69,7 +73,8 @@ kotlin {
             // Declared in commonMain so cross-platform pages can conditionally
             // use `WXButton {}` / `registerWXModules()` behind an
             // `is_miniprogram` runtime check.
-            implementation(project(":core-wx"))
+            // 原：implementation(project(":core-wx"))
+            implementation("com.tencent.kuikly-open:core-wx:${Version.getKuiklyVersion()}")
             // Chat Demo 相关依赖
             implementation("com.tencent.kuiklybase:markdown:0.4.0")
             implementation("io.ktor:ktor-client-core:2.3.10")
@@ -158,7 +163,9 @@ ksp {
 }
 
 dependencies {
-    compileOnly(project(":core-ksp")) {
+    // === 方案B：core-ksp 改为版本依赖，使用支持 JS 分包（packEntryJSBundle）的版本 ===
+    // 原：compileOnly(project(":core-ksp")) { ... }
+    compileOnly("com.tencent.kuikly-open:core-ksp:${Version.getKuiklyVersion()}") {
         add("kspIosArm64", this)
         add("kspIosX64", this)
         add("kspIosSimulatorArm64", this)
